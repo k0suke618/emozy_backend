@@ -1,0 +1,2 @@
+class FrameImagesController < ApplicationController
+end

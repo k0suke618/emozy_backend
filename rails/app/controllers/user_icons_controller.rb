@@ -1,0 +1,2 @@
+class UserIconsController < ApplicationController
+end

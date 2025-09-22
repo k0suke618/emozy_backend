@@ -1,0 +1,2 @@
+class FrameList < ApplicationRecord
+end

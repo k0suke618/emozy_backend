@@ -1,0 +1,2 @@
+module FrameImagesHelper
+end

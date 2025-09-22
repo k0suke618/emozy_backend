@@ -1,0 +1,2 @@
+class BackgroundImage < ApplicationRecord
+end

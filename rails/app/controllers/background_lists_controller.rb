@@ -1,0 +1,2 @@
+class BackgroundListsController < ApplicationController
+end

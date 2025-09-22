@@ -1,0 +1,2 @@
+class IconImage < ApplicationRecord
+end

@@ -1,0 +1,2 @@
+class UserIcon < ApplicationRecord
+end

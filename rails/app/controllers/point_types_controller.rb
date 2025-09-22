@@ -1,0 +1,2 @@
+class PointTypesController < ApplicationController
+end

@@ -1,0 +1,55 @@
+# docker-compose.yml（修正版）
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: rails
+      POSTGRES_PASSWORD: rails
+      POSTGRES_DB: app_production
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rails"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./python
+    environment:
+      LLM_BASE_URL: "http://llm:8000/v1"
+      LLM_API_KEY: "token-abc123"
+      LLM_MODEL: "Qwen/Qwen2.5-1.5B-Instruct"
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  rails:
+    build: ./rails
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgres://rails:rails@db:5432/app_production
+      LLM_API_BASE: http://api:8000
+      RAILS_LOG_TO_STDOUT: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./rails:/rails
+      - bundle:/usr/local/bundle
+    command: bash -lc "cd app && bundle exec rails server -b 0.0.0.0 -p 3000"
+
+volumes:
+  db-data:
+  bundle:

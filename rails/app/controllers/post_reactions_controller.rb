@@ -1,0 +1,2 @@
+class PostReactionsController < ApplicationController
+end
