@@ -10,8 +10,194 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 0) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
+  create_table "background_images", force: :cascade do |t|
+    t.string "image", null: false
+    t.bigint "point", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "background_lists", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "image_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["image_id"], name: "index_background_lists_on_image_id"
+    t.index ["user_id"], name: "index_background_lists_on_user_id"
+  end
+
+  create_table "favorites", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "post_id", null: false
+    t.bigint "topic_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id"], name: "index_favorites_on_post_id"
+    t.index ["topic_id"], name: "index_favorites_on_topic_id"
+    t.index ["user_id"], name: "index_favorites_on_user_id"
+  end
+
+  create_table "follows", force: :cascade do |t|
+    t.bigint "follower_id", null: false
+    t.bigint "followed_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["followed_id"], name: "index_follows_on_followed_id"
+    t.index ["follower_id"], name: "index_follows_on_follower_id"
+  end
+
+  create_table "frame_images", force: :cascade do |t|
+    t.string "image", null: false
+    t.bigint "point", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "frame_lists", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "image_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["image_id"], name: "index_frame_lists_on_image_id"
+    t.index ["user_id"], name: "index_frame_lists_on_user_id"
+  end
+
+  create_table "icon_image_lists", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "image_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["image_id"], name: "index_icon_image_lists_on_image_id"
+    t.index ["user_id"], name: "index_icon_image_lists_on_user_id"
+  end
+
+  create_table "icon_images", force: :cascade do |t|
+    t.string "image", null: false
+    t.bigint "point", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "point_types", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "points", force: :cascade do |t|
+    t.bigint "point_type_id", null: false
+    t.bigint "value", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["point_type_id"], name: "index_points_on_point_type_id"
+  end
+
+  create_table "post_reactions", force: :cascade do |t|
+    t.bigint "post_id", null: false
+    t.bigint "topic_id", null: false
+    t.bigint "reaction_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id"], name: "index_post_reactions_on_post_id"
+    t.index ["reaction_id"], name: "index_post_reactions_on_reaction_id"
+    t.index ["topic_id"], name: "index_post_reactions_on_topic_id"
+    t.index ["user_id"], name: "index_post_reactions_on_user_id"
+  end
+
+  create_table "posts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "topic_id", null: false
+    t.text "content"
+    t.string "image"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["topic_id"], name: "index_posts_on_topic_id"
+    t.index ["user_id"], name: "index_posts_on_user_id"
+  end
+
+  create_table "reactions", force: :cascade do |t|
+    t.string "image", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "report_types", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "reports", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "post_id", null: false
+    t.bigint "report_type_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id"], name: "index_reports_on_post_id"
+    t.index ["report_type_id"], name: "index_reports_on_report_type_id"
+    t.index ["user_id"], name: "index_reports_on_user_id"
+  end
+
+  create_table "topics", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_icons", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "icon_image_id", null: false
+    t.boolean "is_icon", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["icon_image_id"], name: "index_user_icons_on_icon_image_id"
+    t.index ["user_id"], name: "index_user_icons_on_user_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", null: false
+    t.text "profile"
+    t.bigint "point", default: 0, null: false
+    t.bigint "background_id"
+    t.bigint "frame_id"
+    t.string "encrypted_password", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["background_id"], name: "index_users_on_background_id"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["frame_id"], name: "index_users_on_frame_id"
+  end
+
+  add_foreign_key "background_lists", "background_images", column: "image_id"
+  add_foreign_key "background_lists", "users"
+  add_foreign_key "favorites", "posts"
+  add_foreign_key "favorites", "topics"
+  add_foreign_key "favorites", "users"
+  add_foreign_key "follows", "users", column: "followed_id"
+  add_foreign_key "follows", "users", column: "follower_id"
+  add_foreign_key "frame_lists", "frame_images", column: "image_id"
+  add_foreign_key "frame_lists", "users"
+  add_foreign_key "icon_image_lists", "icon_images", column: "image_id"
+  add_foreign_key "icon_image_lists", "users"
+  add_foreign_key "points", "point_types"
+  add_foreign_key "post_reactions", "posts"
+  add_foreign_key "post_reactions", "reactions"
+  add_foreign_key "post_reactions", "topics"
+  add_foreign_key "post_reactions", "users"
+  add_foreign_key "posts", "topics"
+  add_foreign_key "posts", "users"
+  add_foreign_key "reports", "posts"
+  add_foreign_key "reports", "report_types"
+  add_foreign_key "reports", "users"
+  add_foreign_key "user_icons", "icon_images"
+  add_foreign_key "user_icons", "users"
+  add_foreign_key "users", "background_images", column: "background_id"
+  add_foreign_key "users", "frame_images", column: "frame_id"
 end
