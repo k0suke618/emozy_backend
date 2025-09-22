@@ -5,15 +5,12 @@ class CreateUsers < ActiveRecord::Migration[7.2]
       t.string :email, null: false, index: { unique: true }
       t.text :profile, null: true
       t.bigint :point, null: false, default: 0
-      t.references :icon, foreign_key: true, null: false, default: 1
-      t.references :background, foreign_key: true, null: true
-      t.references :frame, foreign_key: true, null: true
+      t.references :background, foreign_key: { to_table: :background_images }, null: true
+      t.references :frame, foreign_key: { to_table: :frame_images }, null: true
 
       t.string :encrypted_password, null: false, default: ""
 
       t.timestamps
     end
-
-    add_index :users, :email, unique: true
   end
 end
