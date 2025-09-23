@@ -5,3 +5,5 @@ openai==1.51.2
 httpx==0.27.2
 lmstudio==1.5.0
 requests==2.31.0
+pandas==2.1.4
+numpy==1.26.4
