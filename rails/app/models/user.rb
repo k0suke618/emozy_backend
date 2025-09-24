@@ -15,6 +15,17 @@ class User < ApplicationRecord
   has_one :user_icon, dependent: :destroy
   has_many :icon_images, through: :icon_image_lists, source: :image
 
+  has_many :favorites, dependent: :destroy
+  has_many :favorite_posts, through: :favorites, source: :post
+  has_many :favorite_topics, through: :favorites, source: :topic
+
+  # 自分がフォローしているユーザーを取得するための関連
+  has_many :active_follows, class_name: 'Follow', foreign_key: 'follower_id', dependent: :destroy
+  has_many :followings, through: :active_follows, source: :followed
+  # 自分をフォローしているユーザーを取得するための関連
+  has_many :passive_follows, class_name: 'Follow', foreign_key: 'followed_id', dependent: :destroy
+  has_many :followers, through: :passive_follows, source: :follower
+
   # バリデーション
   validates :name, presence: true
   validates :point, presence: true
