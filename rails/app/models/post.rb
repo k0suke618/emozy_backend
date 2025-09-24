@@ -10,6 +10,8 @@ class Post < ApplicationRecord
   has_many :favorites, dependent: :destroy
   has_many :users_who_favorited, through: :favorites, source: :user
 
+  has_many :reports, dependent: :destroy
+
   # バリデーション
   validates :user_id, presence: true
   validates :topic_id, presence: true
