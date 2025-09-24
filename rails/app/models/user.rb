@@ -12,6 +12,9 @@ class User < ApplicationRecord
   has_many :reactions, through: :post_reactions
   has_many :topics, through: :posts
 
+  has_one :user_icon, dependent: :destroy
+  has_many :icon_images, through: :icon_image_lists, source: :image
+
   # バリデーション
   validates :name, presence: true
   validates :point, presence: true
