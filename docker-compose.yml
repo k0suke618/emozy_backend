@@ -47,9 +47,7 @@ services:
       - "3000:3000"
     volumes:
       - ./rails:/rails
-      - bundle:/usr/local/bundle
     command: bash -lc "cd app && bundle exec rails server -b 0.0.0.0 -p 3000"
 
 volumes:
   db-data:
-  bundle:

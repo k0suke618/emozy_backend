@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
+# Ensure app gems are installed when using the shared bundle volume
+if ! bundle check > /dev/null 2>&1; then
+  bundle install
+fi
+
 # Enable jemalloc for reduced memory usage and latency.
 if [ -z "${LD_PRELOAD+x}" ] && [ -f /usr/lib/*/libjemalloc.so.2 ]; then
   export LD_PRELOAD="$(echo /usr/lib/*/libjemalloc.so.2)"
