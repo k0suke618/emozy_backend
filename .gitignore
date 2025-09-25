@@ -35,3 +35,5 @@ rails/config/master.key
 
 .env
 python/.env
+
+python/app/data
