@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_26_095231) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -98,14 +98,12 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
 
   create_table "post_reactions", force: :cascade do |t|
     t.bigint "post_id", null: false
-    t.bigint "topic_id", null: false
     t.bigint "reaction_id", null: false
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["post_id"], name: "index_post_reactions_on_post_id"
     t.index ["reaction_id"], name: "index_post_reactions_on_reaction_id"
-    t.index ["topic_id"], name: "index_post_reactions_on_topic_id"
     t.index ["user_id"], name: "index_post_reactions_on_user_id"
   end
 
@@ -121,9 +119,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
   end
 
   create_table "reactions", force: :cascade do |t|
+    t.string "name", null: false
     t.string "image", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_reactions_on_name", unique: true
   end
 
   create_table "report_types", force: :cascade do |t|
@@ -160,6 +160,17 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
     t.index ["user_id"], name: "index_user_icons_on_user_id"
   end
 
+  create_table "user_points", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "point_id", null: false
+    t.bigint "value", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["point_id"], name: "index_user_points_on_point_id"
+    t.index ["user_id", "point_id"], name: "index_user_points_on_user_id_and_point_id"
+    t.index ["user_id"], name: "index_user_points_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "email", null: false
@@ -167,7 +178,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
     t.bigint "point", default: 0, null: false
     t.bigint "background_id"
     t.bigint "frame_id"
-    t.string "encrypted_password", default: "", null: false
+    t.string "password_digest", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["background_id"], name: "index_users_on_background_id"
@@ -189,7 +200,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
   add_foreign_key "points", "point_types"
   add_foreign_key "post_reactions", "posts"
   add_foreign_key "post_reactions", "reactions"
-  add_foreign_key "post_reactions", "topics"
   add_foreign_key "post_reactions", "users"
   add_foreign_key "posts", "topics"
   add_foreign_key "posts", "users"
@@ -198,6 +208,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_21_155547) do
   add_foreign_key "reports", "users"
   add_foreign_key "user_icons", "icon_images"
   add_foreign_key "user_icons", "users"
+  add_foreign_key "user_points", "points"
+  add_foreign_key "user_points", "users"
   add_foreign_key "users", "background_images", column: "background_id"
   add_foreign_key "users", "frame_images", column: "frame_id"
 end
