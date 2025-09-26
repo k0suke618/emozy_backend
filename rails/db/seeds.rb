@@ -176,9 +176,9 @@ users.each do |user|
 
   # ポイント履歴を作成
   point_type_map.each_key do |content|
-    template_point = points_by_type.fetch(content).sample
-    UserPoint.find_or_create_by!(user: user, point: template_point) do |user_point|
-      user_point.value = template_point.value
+    rand(1..3).times do
+      template_point = points_by_type.fetch(content).sample
+      UserPoint.create!(user: user, point: template_point, value: template_point.value)
     end
   end
   

@@ -167,7 +167,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_26_095231) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["point_id"], name: "index_user_points_on_point_id"
-    t.index ["user_id", "point_id"], name: "index_user_points_on_user_id_and_point_id", unique: true
+    t.index ["user_id", "point_id"], name: "index_user_points_on_user_id_and_point_id"
     t.index ["user_id"], name: "index_user_points_on_user_id"
   end
 
