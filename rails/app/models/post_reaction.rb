@@ -2,7 +2,7 @@ class PostReaction < ApplicationRecord
   # アソシエーション
   belongs_to :user
   belongs_to :post
-  belongs_to :raction
+  belongs_to :reaction
   has_one :topic, through: :post
 
   # バリデーション
