@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_26_093833) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_26_095231) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -89,13 +89,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_26_093833) do
   end
 
   create_table "points", force: :cascade do |t|
-    t.bigint "user_id", null: false
     t.bigint "point_type_id", null: false
     t.bigint "value", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["point_type_id"], name: "index_points_on_point_type_id"
-    t.index ["user_id"], name: "index_points_on_user_id"
   end
 
   create_table "post_reactions", force: :cascade do |t|
@@ -162,6 +160,17 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_26_093833) do
     t.index ["user_id"], name: "index_user_icons_on_user_id"
   end
 
+  create_table "user_points", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "point_id", null: false
+    t.bigint "value", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["point_id"], name: "index_user_points_on_point_id"
+    t.index ["user_id", "point_id"], name: "index_user_points_on_user_id_and_point_id", unique: true
+    t.index ["user_id"], name: "index_user_points_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "email", null: false
@@ -189,7 +198,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_26_093833) do
   add_foreign_key "icon_image_lists", "icon_images", column: "image_id"
   add_foreign_key "icon_image_lists", "users"
   add_foreign_key "points", "point_types"
-  add_foreign_key "points", "users"
   add_foreign_key "post_reactions", "posts"
   add_foreign_key "post_reactions", "reactions"
   add_foreign_key "post_reactions", "users"
@@ -200,6 +208,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_26_093833) do
   add_foreign_key "reports", "users"
   add_foreign_key "user_icons", "icon_images"
   add_foreign_key "user_icons", "users"
+  add_foreign_key "user_points", "points"
+  add_foreign_key "user_points", "users"
   add_foreign_key "users", "background_images", column: "background_id"
   add_foreign_key "users", "frame_images", column: "frame_id"
 end

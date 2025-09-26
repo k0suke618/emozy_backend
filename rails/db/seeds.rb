@@ -139,11 +139,25 @@ puts 'Items assigned successfully!'
 puts 'Creating Follows, Favorites, Points, and Reports...'
 posts = Post.all
 topics = Topic.all
-point_types = [
-  PointType.find_or_create_by!(content: 'ログインボーナス'),
-  PointType.find_or_create_by!(content: '投稿'),
-  PointType.find_or_create_by!(content: 'リアクション獲得'),
-]
+point_type_map = {
+  'ログインボーナス' => PointType.find_or_create_by!(content: 'ログインボーナス'),
+  '投稿' => PointType.find_or_create_by!(content: '投稿'),
+  'リアクション獲得' => PointType.find_or_create_by!(content: 'リアクション獲得')
+}
+
+point_templates = {
+  'ログインボーナス' => [50, 100, 150],
+  '投稿' => [10, 20, 30],
+  'リアクション獲得' => [5, 8, 12]
+}
+
+points_by_type = point_templates.each_with_object({}) do |(content, values), hash|
+  point_type = point_type_map.fetch(content)
+  hash[content] = values.map do |value|
+    Point.find_or_create_by!(point_type: point_type, value: value)
+  end
+end
+
 report_types = [
   ReportType.find_or_create_by!(content: 'スパム'),
   ReportType.find_or_create_by!(content: '不適切なコンテンツ'),
@@ -161,8 +175,11 @@ users.each do |user|
   end
 
   # ポイント履歴を作成
-  point_types.each do |type|
-    Point.create!(user: user, point_type: type, value: rand(10..100))
+  point_type_map.each_key do |content|
+    template_point = points_by_type.fetch(content).sample
+    UserPoint.find_or_create_by!(user: user, point: template_point) do |user_point|
+      user_point.value = template_point.value
+    end
   end
   
   # レポートを作成
