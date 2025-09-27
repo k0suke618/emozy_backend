@@ -1,16 +1,11 @@
 # http://localhost:8000/python/chat
 
 # app/main.py
-import os
 import requests
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from report import Report
-
-BASE_URL = os.getenv("LLM_BASE_URL", "http://host.docker.internal:1234/v1")
-API_KEY  = os.getenv("LLM_API_KEY", "lm-studio")
-MODEL    = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
+from report import BASE_URL, MODEL, Report, call_llm
 
 app = FastAPI()
 
@@ -23,33 +18,58 @@ class ChatIn(BaseModel):
 def health():
     return {"ok": True, "model": MODEL, "base_url": BASE_URL}
 
+def _safe_llm_call(*, messages, temperature: float, model: str | None = None) -> dict:
+    try:
+        return call_llm(messages, temperature=temperature, model=model)
+    except requests.Timeout as exc:
+        raise HTTPException(status_code=504, detail="LLM request timed out") from exc
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 # test用API
 @app.post("/python/chat")
 def chat(body: ChatIn):
-    payload = {
-        "model": body.model or MODEL,
-        "messages": [{"role": "user", "content": body.message}],
-        "temperature": body.temperature or 0.2,
-    }
-    r = requests.post(
-        f"{BASE_URL}/chat/completions",
-        headers={"Authorization": f"Bearer {API_KEY}"},
-        json=payload,
-        timeout=60,
+    message = _safe_llm_call(
+        messages=[{"role": "user", "content": body.message}],
+        temperature=body.temperature or 0.2,
+        model=body.model or MODEL,
     )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    return message.get("content", "")
 
 # 通報判定API
 @app.post("/python/judge_report")
 def judge_report(body: ChatIn):
     report = Report(language="JP")
-    is_report, response = report.judge_report(body.message)
-    report_type = -1
-    if is_report:
-        report_type = report.judge_report_type(response)
+    try:
+        result = report.judge_report(body.message)
+    except requests.Timeout as exc:
+        raise HTTPException(status_code=504, detail="LLM request timed out") from exc
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        # エラー発生時もAPIは200で返し、クライアントに理由を知らせる
+        return {
+            "is_report": False,
+            "response": "",
+            "detail": str(exc),
+        }
+
+    summary = ""
+    if result.is_report:
+        try:
+            summary_source = result.reasoning or body.message
+            summary = report.summarize_reasoning(summary_source)
+            # "。"の後の文章は不要なので削除
+            if "。" in summary:
+                summary = summary.split("。")[0] + "。"
+        except requests.Timeout as exc:
+            raise HTTPException(status_code=504, detail="Summary request timed out") from exc
+        except requests.RequestException as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
     return {
-        "is_report": is_report,
-        "response": response,
-        "report_type": report_type,
+        "is_report": result.is_report,
+        "response": summary,
+        "detail": "",
     }
