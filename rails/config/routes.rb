@@ -15,6 +15,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       # 疎通確認 (GET /api/v1/ping -> {"ok":true})
       get "ping", to: "health#ping" #http://localhost:3000/api/v1/ping
+
+      # 投稿内容取得
+      resources :posts, only: [:index, :create, :show, :update, :destroy]
     end
   end
 end
