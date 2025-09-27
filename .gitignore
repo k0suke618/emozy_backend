@@ -39,3 +39,7 @@ python/.env
 python/app/data
 
 rails/vendor/bundle/*
+
+python/app/runs
+*.pyc
+__pycache__/

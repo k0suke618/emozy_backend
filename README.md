@@ -7,3 +7,11 @@
 # Docker 停止
 
 `docker compose down --remove-orphans`
+
+# python api
+
+POST: `http://localhost:8000/python/chat`
+
+JSON: {
+"message": "Hello!"
+}
