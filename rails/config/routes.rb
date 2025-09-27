@@ -11,4 +11,10 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      # 疎通確認 (GET /api/v1/ping -> {"ok":true})
+      get "ping", to: "health#ping" #http://localhost:3000/api/v1/ping
+    end
+  end
 end
