@@ -63,12 +63,19 @@ puts 'Topics created successfully!'
 puts 'Creating Posts...'
 users = User.all
 topics = Topic.all
+posts_image_dir = Rails.root.join('public', 'assets', 'posts_image')
+posts_image_paths = if Dir.exist?(posts_image_dir)
+                      Dir.children(posts_image_dir).map { |filename| File.join('assets', 'posts_image', filename) }
+                    else
+                      []
+                    end
 50.times do
+  image_path = (posts_image_paths + [nil]).sample
   Post.create!(
     user: users.sample,
     topic: topics.sample,
     content: Faker::Lorem.paragraph,
-    image: [Faker::Lorem.word + '.jpg', nil].sample # 投稿には画像があってもなくてもよい
+    image: image_path
   )
 end
 puts 'Posts created successfully!'

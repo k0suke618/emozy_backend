@@ -32,7 +32,7 @@ RUN bundle install
 COPY . .
 
 # Expose port 3000 to the host
-EXPOSE 3000
+EXPOSE 3333
 
 # The main command to run when the container starts
 CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
