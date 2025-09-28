@@ -20,6 +20,9 @@ Rails.application.routes.draw do
       resources :posts, only: [:index, :create, :show, :update, :destroy]
       # 投稿内容のリアクション取得・追加・削除
       resources :post_reactions, only: [:index, :create, :destroy, :show, :update]
+
+      # ranking表示
+      post "ranking", to: "ranking#create" #http://localhost:3000/api/v1/ranking
     end
   end
 end

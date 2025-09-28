@@ -1,6 +1,7 @@
 module Api
   module V1
     class PostsController < ApplicationController
+      include ImageUrlHelper
       protect_from_forgery with: :null_session
 
       # GET /api/v1/posts
@@ -118,13 +119,6 @@ module Api
 
       def post_update_params
         params.require(:post).permit(:user_id, :reaction_id, :increment)
-      end
-
-      # フロント用にurlを追加
-      def build_image_url(path)
-        return nil if path.nil? # 画像がない場合はnilを返す
-        return path if path.start_with?('http://', 'https://') # すでにURL形式の場合はそのまま返す
-        "#{request.base_url}/#{path}" # 相対パスを絶対URLに変換（http://localhost:3000/assets/images/posts_image/???.jpeg）
       end
       
       # 全データに対して画像URLとリアクション数を追加するためのヘルパーメソッド
