@@ -63,9 +63,9 @@ puts 'Topics created successfully!'
 puts 'Creating Posts...'
 users = User.all
 topics = Topic.all
-posts_image_dir = Rails.root.join('public', 'assets', 'posts_image')
+posts_image_dir = Rails.root.join('public', 'assets', 'posts', 'images')
 posts_image_paths = if Dir.exist?(posts_image_dir)
-                      Dir.children(posts_image_dir).map { |filename| File.join('assets', 'posts_image', filename) }
+                      Dir.children(posts_image_dir).map { |filename| File.join('assets', 'posts', 'images', filename) }
                     else
                       []
                     end
