@@ -85,7 +85,7 @@ module Api
         "#{request.base_url}/#{path}" # 相対パスを絶対URLに変換（http://localhost:3000/assets/images/posts_image/???.jpeg）
       end
       
-      # 全データに対して画像URLを追加するためのヘルパーメソッド
+      # 全データに対して画像URLとリアクション数を追加するためのヘルパーメソッド
       def serialize_post(p)
         {
           id:         p.id,
@@ -93,6 +93,7 @@ module Api
           topic_id:   p.topic_id,
           content:    p.content,
           image_url:  build_image_url(p.image), # 画像のURLを追加
+          num_reactions: get_num_reactions(p), # リアクション数を追加
           created_at: p.created_at,
           updated_at: p.updated_at
         }
@@ -137,6 +138,12 @@ module Api
         return 'gif' if image_data.start_with?('GIF8')
 
         nil
+      end
+
+      # 投稿に紐づくリアクション数を取得するメソッド
+      def get_num_reactions(post)
+        # リアクションの種類ごとにカウントする
+        post.post_reactions.group(:reaction_id).count
       end
     end
   end
