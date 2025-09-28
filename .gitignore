@@ -43,3 +43,5 @@ rails/vendor/bundle/*
 python/app/runs
 *.pyc
 __pycache__/
+test_data
+*.DS_Store
