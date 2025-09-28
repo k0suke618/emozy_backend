@@ -179,7 +179,8 @@ module Api
       # 投稿に紐づくリアクション数を取得するメソッド
       def get_num_reactions(post)
         # リアクションの種類ごとにカウントする
-        post.post_reactions.group(:reaction_id).count
+        # fix: 投稿者分もカウントされるから、-1する
+        post.post_reactions.group(:reaction_id).count.transform_values { |v| v - 1 }
       end
     end
   end
