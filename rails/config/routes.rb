@@ -19,7 +19,7 @@ Rails.application.routes.draw do
       # 投稿内容取得
       resources :posts, only: [:index, :create, :show, :update, :destroy]
       # 投稿内容のリアクション取得・追加・削除
-      resources :post_reactions, only: [:index, :create, :destroy, :show]
+      resources :post_reactions, only: [:index, :create, :destroy, :show, :update]
     end
   end
 end

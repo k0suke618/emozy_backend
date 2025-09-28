@@ -34,7 +34,7 @@ module Api
 
             if reaction_ids.present?
               reaction_ids.each do |reaction_id|
-                post.post_reactions.create!(reaction_id: reaction_id, user_id: post.user_id)
+                post.post_reactions.find_or_create_by!(reaction_id: reaction_id, user_id: post.user_id)
               end
             end
           end
@@ -53,12 +53,50 @@ module Api
 
       # PUT /api/v1/posts/:id
       def update
+        # 例: { "post": {"user_id": 1, "reaction_id": 1, "increment": true } }
+        # incrementがtrueなら+1、falseなら-1
+        permitted_params = post_update_params
         post = Post.find(params[:id])
-        if post.update(post_params)
-          render json: post
+
+        reaction_id = permitted_params[:reaction_id]
+        return render json: { error: 'reaction_id is required' }, status: :unprocessable_entity if reaction_id.nil?
+        reaction_id = reaction_id.to_i
+
+        user_id = permitted_params[:user_id]
+        return render json: { error: 'user_id is required' }, status: :unprocessable_entity if user_id.nil?
+
+        return render json: { error: 'increment parameter is required' }, status: :unprocessable_entity unless permitted_params.key?(:increment)
+
+        increment_flag = ActiveModel::Type::Boolean.new.cast(permitted_params[:increment])
+
+        if increment_flag
+          # リアクションを＋1するように、Post_Reactionsテーブルにレコードを追加
+          reaction = post.post_reactions.find_or_initialize_by(reaction_id: reaction_id, user_id: user_id)
+
+          if reaction.persisted?
+            # すでに同じユーザーが同じリアクションをしている場合はエラー
+            reaction.errors.add(:user_id, 'has already reacted with this reaction')
+            raise ActiveRecord::RecordInvalid.new(reaction)
+          else
+            reaction.save!
+          end
         else
-          render json: post.errors, status: :unprocessable_entity
+          # リアクションを－1するように、Post_Reactionsテーブルからレコードを削除
+          reaction = post.post_reactions.find_by(reaction_id: reaction_id, user_id: user_id)
+
+          unless reaction
+            return render json: { error: 'reaction not found for user' }, status: :not_found
+          end
+
+          reaction.destroy!
         end
+        
+        # 変更後の投稿データを返す
+        render json: serialize_post(post.reload)
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Post not found" }, status: :not_found
+      rescue ActiveRecord::RecordInvalid => e
+        render json: e.record.errors, status: :unprocessable_entity
       end
 
       # DELETE /api/v1/posts/:id
@@ -76,6 +114,10 @@ module Api
 
       def post_create_params
         params.require(:post).permit(:user_id, :topic_id, :content, :image, reaction_ids: [])
+      end
+
+      def post_update_params
+        params.require(:post).permit(:user_id, :reaction_id, :increment)
       end
 
       # フロント用にurlを追加
