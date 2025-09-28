@@ -87,6 +87,10 @@ module Api
           user_name = post['ranking_user_name'] || post.user&.name
           user_id   = post['ranking_user_id'] || post.user_id
           score     = post['score'] || 0
+          # scoreは各投稿のリアクションの種類の数を引くようにする（0でなければ）
+          if score > 0
+            score -= post.post_reactions.select(:reaction_id).distinct.count if post.respond_to?(:post_reactions)
+          end
 
           {
             rank: index + 1,

@@ -23,6 +23,7 @@ Rails.application.routes.draw do
 
       # ranking表示
       post "ranking", to: "ranking#create" #http://localhost:3000/api/v1/ranking
+      get "ranking", to: "ranking#index"  #http://localhost:3000/api/v1/ranking
     end
   end
 end
