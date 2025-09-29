@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_26_095231) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_29_045025) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -114,6 +114,18 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_26_095231) do
     t.string "image"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_set_reaction_1", default: false, null: false
+    t.boolean "is_set_reaction_2", default: false, null: false
+    t.boolean "is_set_reaction_3", default: false, null: false
+    t.boolean "is_set_reaction_4", default: false, null: false
+    t.boolean "is_set_reaction_5", default: false, null: false
+    t.boolean "is_set_reaction_6", default: false, null: false
+    t.boolean "is_set_reaction_7", default: false, null: false
+    t.boolean "is_set_reaction_8", default: false, null: false
+    t.boolean "is_set_reaction_9", default: false, null: false
+    t.boolean "is_set_reaction_10", default: false, null: false
+    t.boolean "is_set_reaction_11", default: false, null: false
+    t.boolean "is_set_reaction_12", default: false, null: false
     t.index ["topic_id"], name: "index_posts_on_topic_id"
     t.index ["user_id"], name: "index_posts_on_user_id"
   end

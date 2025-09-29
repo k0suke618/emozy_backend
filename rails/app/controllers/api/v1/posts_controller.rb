@@ -30,14 +30,21 @@ module Api
 
         begin
           Post.transaction do
-            post.image = save_base64_image(image_base64) if image_base64.present?
-            raise ActiveRecord::RecordInvalid.new(post) unless post.save
-
+            # reaction_idsが指定されている場合は対応するis_set_reaction_nをtrueに設定
             if reaction_ids.present?
+              post.is_set_reaction_1 = false # デフォルトでtrueになっているのでfalseにリセット
               reaction_ids.each do |reaction_id|
-                post.post_reactions.find_or_create_by!(reaction_id: reaction_id, user_id: post.user_id)
+                reaction_number = Integer(reaction_id, exception: false)
+                next unless reaction_number&.between?(1, 12)
+
+                post.send("is_set_reaction_#{reaction_number}=", true)
               end
             end
+
+            # 画像がbase64エンコードされている場合はデコードして保存
+            post.image = save_base64_image(image_base64) if image_base64.present?
+
+            post.save!
           end
 
           render json: post, status: :created
@@ -180,7 +187,16 @@ module Api
       def get_num_reactions(post)
         # リアクションの種類ごとにカウントする
         # fix: 投稿者分もカウントされるから、-1する
-        post.post_reactions.group(:reaction_id).count.transform_values { |v| v - 1 }
+        # post.post_reactions.group(:reaction_id).count.transform_values { |v| v - 1 }
+
+        # is_set_reaction_nがtrueのものだけカウントする場合
+        counts = {}
+        (1..12).each do |i|
+          if post.send("is_set_reaction_#{i}")
+            counts[i] = post.post_reactions.where(reaction_id: i).count
+          end
+        end
+        counts
       end
     end
   end
