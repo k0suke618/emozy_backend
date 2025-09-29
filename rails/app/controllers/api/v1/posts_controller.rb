@@ -33,12 +33,21 @@ module Api
             # reaction_idsが指定されている場合は対応するis_set_reaction_nをtrueに設定
             if reaction_ids.present?
               post.is_set_reaction_1 = false # デフォルトでtrueになっているのでfalseにリセット
+              
+              # 有効なリアクション番号だけを抽出して設定
+              valid_reaction_numbers = []
+
               reaction_ids.each do |reaction_id|
+                # reaction_idが1から12の間でない場合は無視
                 reaction_number = Integer(reaction_id, exception: false)
                 next unless reaction_number&.between?(1, 12)
 
+                # 有効なリアクション番号として記録
+                valid_reaction_numbers << reaction_number
                 post.send("is_set_reaction_#{reaction_number}=", true)
               end
+
+              Reaction.ensure_defaults!(valid_reaction_numbers)
             end
 
             # 画像がbase64エンコードされている場合はデコードして保存
@@ -66,13 +75,23 @@ module Api
         permitted_params = post_update_params
         post = Post.find(params[:id])
 
-        reaction_id = permitted_params[:reaction_id]
-        return render json: { error: 'reaction_id is required' }, status: :unprocessable_entity if reaction_id.nil?
-        reaction_id = reaction_id.to_i
+        reaction_param = permitted_params[:reaction_id]
+        # reaction_idが指定されていない場合はエラー
+        return render json: { error: 'reaction_id is required' }, status: :unprocessable_entity if reaction_param.nil?
+
+        reaction_id = Integer(reaction_param, exception: false)
+        # reaction_idが1から12の間でない場合はエラー
+        unless reaction_id&.between?(1, 12)
+          return render json: { error: 'reaction_id must be between 1 and 12' }, status: :unprocessable_entity
+        end
+
+        Reaction.ensure_default!(reaction_id)
 
         user_id = permitted_params[:user_id]
+        # user_idが指定されていない場合はエラー
         return render json: { error: 'user_id is required' }, status: :unprocessable_entity if user_id.nil?
 
+        # incrementが指定されていない場合はエラー
         return render json: { error: 'increment parameter is required' }, status: :unprocessable_entity unless permitted_params.key?(:increment)
 
         increment_flag = ActiveModel::Type::Boolean.new.cast(permitted_params[:increment])
@@ -186,10 +205,6 @@ module Api
       # 投稿に紐づくリアクション数を取得するメソッド
       def get_num_reactions(post)
         # リアクションの種類ごとにカウントする
-        # fix: 投稿者分もカウントされるから、-1する
-        # post.post_reactions.group(:reaction_id).count.transform_values { |v| v - 1 }
-
-        # is_set_reaction_nがtrueのものだけカウントする場合
         counts = {}
         (1..12).each do |i|
           if post.send("is_set_reaction_#{i}")
