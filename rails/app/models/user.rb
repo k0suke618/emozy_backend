@@ -33,7 +33,7 @@ class User < ApplicationRecord
 
 
   # バリデーション
-  validates :name, presence: true
+  # validates :name, presence: true
   validates :point, presence: true
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
 

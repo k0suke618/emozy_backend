@@ -22,7 +22,7 @@ module Api
       private
 
       def signup_params
-        params.require(:signup).permit(:name, :email, :password)
+        params.require(:signup).permit(:email, :password)
       end
     end
   end
