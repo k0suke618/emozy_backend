@@ -24,6 +24,9 @@ Rails.application.routes.draw do
       # ranking表示
       post "ranking", to: "ranking#create" #http://localhost:3000/api/v1/ranking
       get "ranking", to: "ranking#index"  #http://localhost:3000/api/v1/ranking
+
+      # リアクションした投稿一覧取得
+      resources :reacted_posts, only: [:index] # http://localhost:3000/api/v1/reacted_posts?user_id=1
     end
   end
 end

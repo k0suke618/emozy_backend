@@ -66,6 +66,8 @@ module Api
       def show
         post = Post.find(params[:id])
         render json: serialize_post(post)
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Post not found" }, status: :not_found
       end
 
       # PUT /api/v1/posts/:id
@@ -148,16 +150,16 @@ module Api
       end
       
       # 全データに対して画像URLとリアクション数を追加するためのヘルパーメソッド
-      def serialize_post(p)
+      def serialize_post(post)
         {
-          id:         p.id,
-          user_id:    p.user_id,
-          topic_id:   p.topic_id,
-          content:    p.content,
-          image_url:  build_image_url(p.image), # 画像のURLを追加
-          num_reactions: get_num_reactions(p), # リアクション数を追加
-          created_at: p.created_at,
-          updated_at: p.updated_at
+          id:         post.id,
+          user_id:    post.user_id,
+          topic_id:   post.topic_id,
+          content:    post.content,
+          image_url:  build_image_url(post.image),
+          num_reactions: get_num_reactions(post),
+          created_at: post.created_at,
+          updated_at: post.updated_at
         }
       end
 
