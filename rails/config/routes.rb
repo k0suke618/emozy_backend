@@ -14,7 +14,7 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
       # 疎通確認 (GET /api/v1/ping -> {"ok":true})
-      get "ping", to: "health#ping" #http://localhost:3000/api/v1/ping
+      get "ping", to: "health#ping" #http://localhost:3333/api/v1/ping
 
       # 投稿内容取得
       resources :posts, only: [:index, :create, :show, :update, :destroy]
@@ -27,6 +27,15 @@ Rails.application.routes.draw do
 
       # リアクションした投稿一覧取得
       resources :reacted_posts, only: [:index] # http://localhost:3333/api/v1/reacted_posts?user_id=1
+
+      # signup
+      post "signup", to: "signup#create" #http://localhost:3333/api/v1/signup
+
+      # signin
+      post "signin", to: "signin#create" #http://localhost:3333/api/v1/signin
+
+      # users
+      resources :users, only: [:show, :update] #http://localhost:3333/api/v1/users/:id
     end
   end
 end
