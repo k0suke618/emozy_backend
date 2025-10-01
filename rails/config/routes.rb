@@ -48,6 +48,9 @@ Rails.application.routes.draw do
 
       # report
       post "report", to: "report#judge" #http://localhost:3333/api/v1/report
+
+      # point
+      post "point", to: "points#update" #http://localhost:3333/api/v1/point
     end
   end
 end
