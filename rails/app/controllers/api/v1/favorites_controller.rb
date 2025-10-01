@@ -30,7 +30,8 @@ module Api
         params_with_topic[:topic_id] = get_topic_id(params_with_topic[:post_id])
         favorite = Favorite.new(params_with_topic)
         if favorite.save
-          render json: { message: "Favorite created successfully" }, status: :created
+          favorite_post_ids = Favorite.where(user_id: params_with_topic[:user_id]).pluck(:post_id)
+          render json: { message: "Favorite created successfully", favorite_post_ids: favorite_post_ids }, status: :created
         else
           render json: { errors: favorite.errors.full_messages }, status: :unprocessable_entity
         end
