@@ -17,4 +17,17 @@ class Post < ApplicationRecord
   validates :topic_id, presence: true
   validates :content, presence: true, unless: -> { image.present? }
   validates :image, presence: true, unless: -> { content.present? }
+
+  # is_set_reaction_n でtrueの数が1以上5以下であるようにする
+  validate :reaction_count
+
+  private
+
+  def reaction_count
+    count = 0
+    (1..12).each do |i|
+      count += 1 if send("is_set_reaction_#{i}")
+    end
+    errors.add(:base, "リアクションは1つ以上3つ以下にしてください") if count < 1 || count > 3
+  end
 end
