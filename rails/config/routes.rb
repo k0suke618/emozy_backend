@@ -34,6 +34,9 @@ Rails.application.routes.draw do
       # signin
       post "signin", to: "signin#create" #http://localhost:3333/api/v1/signin
 
+      # make
+      put "make/:id", to: "account#update" #http://localhost:3333/api/v1/make/:id
+
       # users
       resources :users, only: [:show, :update] #http://localhost:3333/api/v1/users/:id
     end
