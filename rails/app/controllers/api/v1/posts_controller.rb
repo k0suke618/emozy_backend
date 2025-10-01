@@ -100,7 +100,11 @@ module Api
 
         if increment_flag
           # リアクションを＋1するように、Post_Reactionsテーブルにレコードを追加
-          reaction = post.post_reactions.find_or_initialize_by(reaction_id: reaction_id, user_id: user_id)
+          reaction = post.post_reactions.find_or_initialize_by(
+            reaction_id: reaction_id,
+            user_id: user_id,
+            topic_id: post.topic_id
+          )
 
           if reaction.persisted?
             # すでに同じユーザーが同じリアクションをしている場合はエラー
@@ -111,7 +115,11 @@ module Api
           end
         else
           # リアクションを－1するように、Post_Reactionsテーブルからレコードを削除
-          reaction = post.post_reactions.find_by(reaction_id: reaction_id, user_id: user_id)
+          reaction = post.post_reactions.find_by(
+            reaction_id: reaction_id,
+            user_id: user_id,
+            topic_id: post.topic_id
+          )
 
           unless reaction
             return render json: { error: 'reaction not found for user' }, status: :not_found
