@@ -45,6 +45,9 @@ Rails.application.routes.draw do
 
       # topics
       resources :topics, only: [:index, :create, :show, :update, :destroy]
+
+      # report
+      post "report", to: "report#judge" #http://localhost:3333/api/v1/report
     end
   end
 end
