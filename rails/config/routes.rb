@@ -48,6 +48,9 @@ Rails.application.routes.draw do
 
       # report
       post "report", to: "report#judge" #http://localhost:3333/api/v1/report
+
+      # favorites
+      resources :favorites, only: [:index, :show, :create, :destroy]  #http://localhost:3333/api/v1/favorites
     end
   end
 end
