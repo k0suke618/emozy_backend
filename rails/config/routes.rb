@@ -39,6 +39,12 @@ Rails.application.routes.draw do
 
       # users
       resources :users, only: [:show, :update] #http://localhost:3333/api/v1/users/:id
+
+      # search
+      post "search", to: "search#index" #http://localhost:3333/api/v1/search
+
+      # topics
+      resources :topics, only: [:index, :create, :show, :update, :destroy]
     end
   end
 end
