@@ -7,7 +7,7 @@ module Api
       def index
         # keyword検索API
         # 検索対象
-        # user: name (keywordを含むuserを取得)
+        # user: name (keywordを含むuserを取得), profile (keywordを含むuser profileを取得)
         # post: content (keywordを含むpostを取得)
         # topic: content (topic contentからtopic idを取得、そのtopic idを持つpostを取得)
         keyword = search_params[:keyword]
