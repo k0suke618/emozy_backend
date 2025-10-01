@@ -30,14 +30,30 @@ module Api
 
         begin
           Post.transaction do
-            post.image = save_base64_image(image_base64) if image_base64.present?
-            raise ActiveRecord::RecordInvalid.new(post) unless post.save
-
+            # reaction_idsが指定されている場合は対応するis_set_reaction_nをtrueに設定
             if reaction_ids.present?
+              post.is_set_reaction_1 = false # デフォルトでtrueになっているのでfalseにリセット
+              
+              # 有効なリアクション番号だけを抽出して設定
+              valid_reaction_numbers = []
+
               reaction_ids.each do |reaction_id|
-                post.post_reactions.find_or_create_by!(reaction_id: reaction_id, user_id: post.user_id)
+                # reaction_idが1から12の間でない場合は無視
+                reaction_number = Integer(reaction_id, exception: false)
+                next unless reaction_number&.between?(1, 12)
+
+                # 有効なリアクション番号として記録
+                valid_reaction_numbers << reaction_number
+                post.send("is_set_reaction_#{reaction_number}=", true)
               end
+
+              Reaction.ensure_defaults!(valid_reaction_numbers)
             end
+
+            # 画像がbase64エンコードされている場合はデコードして保存
+            post.image = save_base64_image(image_base64) if image_base64.present?
+
+            post.save!
           end
 
           render json: post, status: :created
@@ -50,6 +66,8 @@ module Api
       def show
         post = Post.find(params[:id])
         render json: serialize_post(post)
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Post not found" }, status: :not_found
       end
 
       # PUT /api/v1/posts/:id
@@ -59,20 +77,34 @@ module Api
         permitted_params = post_update_params
         post = Post.find(params[:id])
 
-        reaction_id = permitted_params[:reaction_id]
-        return render json: { error: 'reaction_id is required' }, status: :unprocessable_entity if reaction_id.nil?
-        reaction_id = reaction_id.to_i
+        reaction_param = permitted_params[:reaction_id]
+        # reaction_idが指定されていない場合はエラー
+        return render json: { error: 'reaction_id is required' }, status: :unprocessable_entity if reaction_param.nil?
+
+        reaction_id = Integer(reaction_param, exception: false)
+        # reaction_idが1から12の間でない場合はエラー
+        unless reaction_id&.between?(1, 12)
+          return render json: { error: 'reaction_id must be between 1 and 12' }, status: :unprocessable_entity
+        end
+
+        Reaction.ensure_default!(reaction_id)
 
         user_id = permitted_params[:user_id]
+        # user_idが指定されていない場合はエラー
         return render json: { error: 'user_id is required' }, status: :unprocessable_entity if user_id.nil?
 
+        # incrementが指定されていない場合はエラー
         return render json: { error: 'increment parameter is required' }, status: :unprocessable_entity unless permitted_params.key?(:increment)
 
         increment_flag = ActiveModel::Type::Boolean.new.cast(permitted_params[:increment])
 
         if increment_flag
           # リアクションを＋1するように、Post_Reactionsテーブルにレコードを追加
-          reaction = post.post_reactions.find_or_initialize_by(reaction_id: reaction_id, user_id: user_id)
+          reaction = post.post_reactions.find_or_initialize_by(
+            reaction_id: reaction_id,
+            user_id: user_id,
+            topic_id: post.topic_id
+          )
 
           if reaction.persisted?
             # すでに同じユーザーが同じリアクションをしている場合はエラー
@@ -83,7 +115,11 @@ module Api
           end
         else
           # リアクションを－1するように、Post_Reactionsテーブルからレコードを削除
-          reaction = post.post_reactions.find_by(reaction_id: reaction_id, user_id: user_id)
+          reaction = post.post_reactions.find_by(
+            reaction_id: reaction_id,
+            user_id: user_id,
+            topic_id: post.topic_id
+          )
 
           unless reaction
             return render json: { error: 'reaction not found for user' }, status: :not_found
@@ -122,16 +158,16 @@ module Api
       end
       
       # 全データに対して画像URLとリアクション数を追加するためのヘルパーメソッド
-      def serialize_post(p)
+      def serialize_post(post)
         {
-          id:         p.id,
-          user_id:    p.user_id,
-          topic_id:   p.topic_id,
-          content:    p.content,
-          image_url:  build_image_url(p.image), # 画像のURLを追加
-          num_reactions: get_num_reactions(p), # リアクション数を追加
-          created_at: p.created_at,
-          updated_at: p.updated_at
+          id:         post.id,
+          user_id:    post.user_id,
+          topic_id:   post.topic_id,
+          content:    post.content,
+          image_url:  build_image_url(post.image),
+          num_reactions: get_num_reactions(post),
+          created_at: post.created_at,
+          updated_at: post.updated_at
         }
       end
 
@@ -179,8 +215,13 @@ module Api
       # 投稿に紐づくリアクション数を取得するメソッド
       def get_num_reactions(post)
         # リアクションの種類ごとにカウントする
-        # fix: 投稿者分もカウントされるから、-1する
-        post.post_reactions.group(:reaction_id).count.transform_values { |v| v - 1 }
+        counts = {}
+        (1..12).each do |i|
+          if post.send("is_set_reaction_#{i}")
+            counts[i] = post.post_reactions.where(reaction_id: i).count
+          end
+        end
+        counts
       end
     end
   end

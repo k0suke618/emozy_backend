@@ -75,7 +75,8 @@ posts_image_paths = if Dir.exist?(posts_image_dir)
     user: users.sample,
     topic: topics.sample,
     content: Faker::Lorem.paragraph,
-    image: image_path
+    image: image_path,
+    is_set_reaction_1: true # デフォルトでリアクション1を有効にする
   )
 end
 puts 'Posts created successfully!'
@@ -99,15 +100,19 @@ puts 'Reactions created successfully!'
 # 各投稿に対してランダムにリアクションを付与
 puts 'Creating PostReactions...'
 posts = Post.all
-reactions = Reaction.all
 posts.each do |post|
-  # 各投稿にランダムな数のリアクションを付ける
-  rand(1..5).times do
-    PostReaction.find_or_create_by!(
-      user: users.sample,
-      post: post,
-      reaction: reactions.sample
-    )
+  # 各投稿に対して、is_set_reaction_nに基づいてPostReactionを作成
+  (1..12).each do |i|
+    if post.send("is_set_reaction_#{i}")
+      reaction = Reaction.find_by(id: i)
+      if reaction
+        PostReaction.find_or_create_by!(
+          user: users.sample,
+          post: post,
+          reaction: reaction
+        )
+      end
+    end
   end
 end
 puts 'PostReactions created successfully!'
