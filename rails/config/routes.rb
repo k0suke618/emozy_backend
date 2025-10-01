@@ -50,7 +50,8 @@ Rails.application.routes.draw do
       post "report", to: "report#judge" #http://localhost:3333/api/v1/report
 
       # favorites
-      resources :favorites, only: [:index, :show, :create, :destroy]  #http://localhost:3333/api/v1/favorites
+      resources :favorites, only: [:index, :show, :create]  #http://localhost:3333/api/v1/favorites
+      post "favorites/delete", to: "favorites#delete" #http://localhost:3333/api/v1/favorites/delete
     end
   end
 end

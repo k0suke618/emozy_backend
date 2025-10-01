@@ -37,6 +37,26 @@ module Api
         end
       end
 
+      # POST /api/v1/favorites/delete
+      def delete
+        # json
+        # {
+        #   "favorite": {
+        #     "user_id": 1,
+        #     "post_id": 2
+        #   }
+        # }
+        params_with_topic = favorite_params.to_h
+        params_with_topic[:topic_id] = get_topic_id(params_with_topic[:post_id])
+        favorite = Favorite.find_by(params_with_topic)
+        if favorite&.destroy
+          favorite_post_ids = Favorite.where(user_id: params_with_topic[:user_id]).pluck(:post_id)
+          render json: { message: "Favorite deleted successfully", favorite_post_ids: favorite_post_ids }, status: :ok
+        else
+          render json: { errors: ["Favorite not found or could not be deleted"] }, status: :not_found
+        end
+      end
+
       private
       def favorite_params
         params.require(:favorite).permit(:user_id, :post_id)
