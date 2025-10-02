@@ -201,4 +201,28 @@ users.each do |user|
 end
 puts 'Follows, Favorites, Points, and Reports created successfully!'
 
+# ----------------------------------------------------
+# 6. icon parts type を設定
+# ----------------------------------------------------
+puts 'Creating IconPartTypes...'
+icon_part_types = [
+  "eyes",
+  "mouth",
+  "skin",
+  "front_hair",
+  "back_hair",
+  "eyebrows",
+  "high_light",
+  "clothing",
+  "accessory",
+]
+
+# IconPartsTypeテーブルにデータを追加
+# すでに存在する場合はスキップ
+# contentカラムに保存
+icon_part_types.each do |type|
+  IconPartsType.find_or_create_by!(content: type)
+end
+puts 'IconPartTypes created successfully!'
+
 puts 'Seed data has been successfully created!'

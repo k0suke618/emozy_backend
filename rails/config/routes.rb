@@ -56,6 +56,14 @@ Rails.application.routes.draw do
       resources :favorites, only: [:index, :show, :create]  #http://localhost:3333/api/v1/favorites
       post "favorites/delete", to: "favorites#delete" #http://localhost:3333/api/v1/favorites/delete
 
+      # icon maker
+      get "icon_maker/data_update", to: "icon_maker#data_update" #http://localhost:3333/api/v1/icon_maker/data_update # アイコンメーカーのデータ更新（ファイルの中身をDBに追加）
+
+      # icon parts type
+      resources :icon_parts_type, only: [:index]  #http://localhost:3333/api/v1/icon_parts_type # アイコンパーツの取得
+      
+      # icon parts
+      resources :icon_parts, only: [:index]  #http://localhost:3333/api/v1/icon_parts # アイコンパーツの取得
     end
   end
 end
