@@ -1,6 +1,8 @@
 module Api
   module V1
     class IconMakerController < ApplicationController
+      protect_from_forgery with: :null_session
+
       # アイコンメーカーのデータ更新（ファイルの中身をDBに追加）
       def data_update
         base_dir = icon_maker_base_dir
@@ -28,7 +30,111 @@ module Api
         render json: { error: e.message }, status: :internal_server_error
       end
 
+      def index
+        # アイコンパーツの一覧をtypeごとに取得して返す
+        # key: アイコンパーツ種別のcontent, value: その種別のアイコンパーツ一覧
+        icon_parts = IconPart.includes(:icon_parts_type).all
+        grouped_parts = icon_parts.group_by { |part| part.icon_parts_type.content }
+        render json: { icon_parts: grouped_parts }, status: :ok
+      end
+
+      def save
+        # icon_parts_listテーブルにアイコンパーツを保存
+        # postリクエストで受け取る
+        # 例: {
+        #   "user_id": 1,
+        #   "icon_parts": {
+        #       "skin": 10,
+        #       "accessory": 2,
+        #       "back_hair": 3,
+        #       "clothing": 4,
+        #       "eyebrows": 5,
+        #       "eyes": 6,
+        #       "front_hair": 7,
+        #       "high_light": 8,
+        #       "mouth": 9
+        #     }
+        # }
+        
+        icon_parts_data = params[:icon_parts]
+        normalized_parts = normalize_icon_parts(icon_parts_data)
+        if normalized_parts.blank?
+          render json: { error: 'Invalid icon parts data' }, status: :bad_request
+          return
+        end
+
+        fallback_user = find_user(params[:user_id]) if params[:user_id].present?
+        icon_parts_lists = []
+
+        normalized_parts.each do |parts|
+          typed_parts = parts.deep_symbolize_keys
+          user = resolve_user_for_parts(typed_parts, fallback_user)
+          unless user
+            render json: { error: 'User not found' }, status: :bad_request
+            return
+          end
+
+          icon_parts_list = IconPartsList.new(user: user)
+          typed_parts.each do |type, part_id|
+            next if type == :user_id
+
+            icon_part = IconPart.find_by(id: part_id)
+            next unless icon_part
+
+            column_name = "#{type}_image"
+            if icon_parts_list.respond_to?("#{column_name}=")
+              icon_parts_list.send("#{column_name}=", icon_part.image)
+            end
+          end
+          icon_parts_lists << icon_parts_list
+        end
+
+        IconPartsList.transaction { icon_parts_lists.each(&:save!) }
+
+        render json: { message: 'Icon parts saved' }, status: :created
+      end
+
+      # get /api/v1/icon_maker?user_id=1
+      def load
+        # user_idに紐づくicon_parts_listを取得して返す
+        user = find_user(params[:user_id])
+        unless user
+          render json: { error: 'User not found' }, status: :bad_request
+          return
+        end
+
+        icon_parts_list = IconPartsList.find_by(user: user)
+        if icon_parts_list
+          render json: { icon_parts_list: icon_parts_list }, status: :ok
+        else
+          render json: { error: 'Icon parts list not found' }, status: :not_found
+        end
+      end
+
       private
+
+      # icon_partsパラメータを配列のハッシュに正規化
+      def normalize_icon_parts(icon_parts_data)
+        case icon_parts_data
+        when Array
+          icon_parts_data.map { |parts| safe_to_hash(parts) }.compact
+        when ActionController::Parameters, Hash
+          [safe_to_hash(icon_parts_data)].compact
+        else
+          []
+        end
+      end
+
+      # ActionController::Parameters を含む値をハッシュに変換
+      def safe_to_hash(parts)
+        if parts.respond_to?(:to_unsafe_h)
+          parts.to_unsafe_h
+        elsif parts.is_a?(Hash)
+          parts
+        else
+          nil
+        end
+      end
 
       # アイコンメーカーのベースフォルダを判定
       def icon_maker_base_dir
@@ -58,6 +164,19 @@ module Api
         return if normalized_name.empty?
 
         IconPartsType.find_or_create_by!(content: normalized_name)
+      end
+
+      # paramsのuser_idを検索してUserを取得
+      def find_user(user_id)
+        User.find_by(id: user_id)
+      end
+
+      # パーツごとのuser_idとフォールバックuserから保存対象ユーザーを決定
+      def resolve_user_for_parts(parts, fallback_user)
+        user_id = parts[:user_id]
+        return fallback_user if user_id.nil?
+
+        find_user(user_id)
       end
     end
   end

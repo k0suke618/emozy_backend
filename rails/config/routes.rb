@@ -58,6 +58,9 @@ Rails.application.routes.draw do
 
       # icon maker
       get "icon_maker/data_update", to: "icon_maker#data_update" #http://localhost:3333/api/v1/icon_maker/data_update # アイコンメーカーのデータ更新（ファイルの中身をDBに追加）
+      get "icon_maker", to: "icon_maker#index" #http://localhost:3333/api/v1/icon_maker # アイコンメーカーのパーツの一覧取得
+      post "icon_maker/save", to: "icon_maker#save" #http://localhost:3333/api/v1/icon_maker/save # アイコンメーカーのパーツを保存
+      get "icon_maker", to: "icon_maker#load" #http://localhost:3333/api/v1/icon_maker?user_id=1 # アイコンメーカーのパーツを取得
 
       # icon parts type
       resources :icon_parts_type, only: [:index]  #http://localhost:3333/api/v1/icon_parts_type # アイコンパーツの取得
