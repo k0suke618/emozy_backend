@@ -162,6 +162,7 @@ module Api
         {
           id:         post.id,
           user_id:    post.user_id,
+          name:       post.name,
           topic_id:   post.topic_id,
           content:    post.content,
           image_url:  build_image_url(post.image),

@@ -21,6 +21,11 @@ class Post < ApplicationRecord
   # is_set_reaction_n でtrueの数が1以上5以下であるようにする
   validate :reaction_count
 
+  # nameカラムの追加
+  validates :name, presence: true
+  # nameはuser_idからuserDBのnameを参照して保存するようにする
+  before_validation :set_name_from_user, if: -> { has_attribute?(:name) && (name.blank? || will_save_change_to_user_id?) }
+
   private
 
   def reaction_count
@@ -29,5 +34,9 @@ class Post < ApplicationRecord
       count += 1 if send("is_set_reaction_#{i}")
     end
     errors.add(:base, "リアクションは1つ以上3つ以下にしてください") if count < 1 || count > 3
+  end
+
+  def set_name_from_user
+    self.name = user&.name
   end
 end
