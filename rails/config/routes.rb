@@ -51,6 +51,11 @@ Rails.application.routes.draw do
 
       # point
       post "point", to: "points#update" #http://localhost:3333/api/v1/point
+
+      # favorites
+      resources :favorites, only: [:index, :show, :create]  #http://localhost:3333/api/v1/favorites
+      post "favorites/delete", to: "favorites#delete" #http://localhost:3333/api/v1/favorites/delete
+
     end
   end
 end
