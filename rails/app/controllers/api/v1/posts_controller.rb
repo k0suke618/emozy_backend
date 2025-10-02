@@ -6,6 +6,7 @@ module Api
 
       # GET /api/v1/posts
       def index
+        @current_user_id = params[:user_id].presence&.to_i
         posts = Post.order(created_at: :desc)
         render json: posts.map { |p| serialize_post(p) }
       end
@@ -165,6 +166,7 @@ module Api
           content:    post.content,
           image_url:  build_image_url(post.image),
           num_reactions: get_num_reactions(post),
+          reacted_reaction_ids: @current_user_id ? post.post_reactions.where(user_id: @current_user_id).pluck(:reaction_id) : [],
           created_at: post.created_at,
           updated_at: post.updated_at
         }
