@@ -20,11 +20,30 @@ require 'faker'
 # 1. ユーザー関連の初期データ
 # ----------------------------------------------------
 
-# 背景画像とフレーム画像を10件ずつ作成
-puts 'Creating BackgroundImages and FrameImages...'
-10.times do |n|
-  BackgroundImage.find_or_create_by!(image: "background_#{n}.jpg", point: rand(100..500))
-  FrameImage.find_or_create_by!(image: "frame_#{n}.jpg", point: rand(100..500))
+# 背景画像を読み込み
+puts 'Creating BackgroundImages...'
+background_image_dir = Rails.root.join('public', 'assets', 'icon_maker', 'background')
+if Dir.exist?(background_image_dir)
+  Dir.children(background_image_dir).select { |f| f.match?(/\.(png|jpg|jpeg|gif)$/i) }.each do |filename|
+    relative_path = File.join('public', 'assets', 'icon_maker', 'background', filename)
+    db_path = File.join('rails', relative_path)
+    BackgroundImage.find_or_create_by!(image: db_path, point: 100)
+  end
+else
+  puts "Warning: Background image directory not found: #{background_image_dir}"
+end
+
+# フレーム画像を読み込み
+puts 'Creating FrameImages...'
+frame_image_dir = Rails.root.join('public', 'assets', 'icon_maker', 'frame')
+if Dir.exist?(frame_image_dir)
+  Dir.children(frame_image_dir).select { |f| f.match?(/\.(png|jpg|jpeg|gif)$/i) }.each do |filename|
+    relative_path = File.join('public', 'assets', 'icon_maker', 'frame', filename)
+    db_path = File.join('rails', relative_path)
+    FrameImage.find_or_create_by!(image: db_path, point: 100)
+  end
+else
+  puts "Warning: Frame image directory not found: #{frame_image_dir}"
 end
 puts 'BackgroundImages and FrameImages created successfully!'
 
