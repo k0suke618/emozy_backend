@@ -71,6 +71,10 @@ Rails.application.routes.draw do
 
       # icon parts list
       resources :icon_parts_list, only: [:index, :show]  #http://localhost:3333/api/v1/icon_parts_list?user_id=1 # アイコンパーツリストの取得
+
+      # frame image
+      get "frame_image/update_db", to: "frame_image#update_db" #http://localhost:3333/api/v1/frame_image/update_db # フレーム画像のデータ更新（ファイルの中身をDBに追加）
+      resources :frame_image, only: [:index, :create, :show, :update, :destroy]
     end
   end
 end
