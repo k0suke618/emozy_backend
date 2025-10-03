@@ -2,7 +2,7 @@
 allowed_origins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'http://192.168.0.105:3000',
+  'http://172.21.0.1:3000',
   # 'https://localhost:3000', # Next.js を https で動かす場合は追加
   ENV.fetch('FRONTEND_ORIGIN', nil)
 ].compact
