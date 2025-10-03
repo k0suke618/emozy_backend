@@ -2,6 +2,7 @@ module Api
   module V1
     class IconMakerController < ApplicationController
       protect_from_forgery with: :null_session
+      include ImageUrlHelper
 
       # アイコンメーカーのデータ更新（ファイルの中身をDBに追加）
       def data_update
@@ -15,9 +16,11 @@ module Api
 
           image_paths = fetch_image_paths(type_folder)
           image_paths.each do |image_path|
-            filename = File.basename(image_path)
+            # assets/icon_maker/skin/skin1.png のような相対パスに変換して保存
+            filename = image_path.sub(%r{^#{Regexp.escape(base_dir.to_s)}/}, 'assets/icon_maker/')
+            next if IconPart.exists?(image: filename, icon_parts_type: icon_parts_type)
 
-            IconPart.find_or_create_by!(
+            IconPart.create!(
               image: filename,
               icon_parts_type: icon_parts_type,
             )
@@ -56,7 +59,7 @@ module Api
         #     }
         # }
         
-        icon_parts_data = params[:icon_parts]
+        icon_parts_data = params[:icon_parts].presence || params[:icon_parts_list]
         normalized_parts = normalize_icon_parts(icon_parts_data)
         if normalized_parts.blank?
           render json: { error: 'Invalid icon parts data' }, status: :bad_request
@@ -111,28 +114,136 @@ module Api
         end
       end
 
+      # post /api/v1/icon_maker/make_icon
+      def make_icon
+      # 受け取ったパーツ情報を元にアイコン画像を生成して返す
+      #   {
+      #   "icon_parts": [
+      #     {
+      #       "id": 1,
+      #       "user_id": 1,
+      #       "eyes_image": "assets/icon_maker/test.png",
+      #       "mouth_image": "assets/icon_maker/test.png",
+      #       "skin_image": "assets/icon_maker/test.png",
+      #       "front_hair_image": "assets/icon_maker/test.png",
+      #       "back_hair_image": "assets/icon_maker/test.png",
+      #       "eyebrows_image": "assets/icon_maker/test.png",
+      #       "high_light_image": "assets/icon_maker/test.png",
+      #       "clothing_image": "assets/icon_maker/test.png",
+      #       "accessory_image": "assets/icon_maker/test.png",
+      #       "background": "assets/icon_maker/test.png",
+      #       "frame": "assets/icon_maker/test.png"
+      #     }
+      #   ]
+      # }
+        layer_order = %w[background skin back_hair clothing eyebrows eyes high_light front_hair mouth accessory frame]
+        icon_parts_data = params[:icon_parts].presence || params[:icon_parts_list]
+        normalized_parts = normalize_icon_parts(icon_parts_data)
+        if normalized_parts.blank?
+          render json: { error: 'Invalid icon parts data' }, status: :bad_request
+          return
+        end
+
+        fallback_user = find_user(params[:user_id]) if params[:user_id].present?
+
+        # 画像合成処理
+        # 1. 各パーツの画像を読み込み
+        # 2. レイヤー順に重ね合わせ
+        # 3. 最終画像を保存してURLを返す
+        begin
+          require 'mini_magick'
+        rescue LoadError
+          render json: { error: 'Image processing library not available' }, status: :internal_server_error
+          return
+        end
+        generated_images = []
+        normalized_parts.each do |parts|
+          images = []
+          layer_order.each do |layer|
+            image_file = parts["#{layer}_image"] || parts[layer.to_sym]
+            next unless image_file.present?
+
+            image_path = Rails.root.join('public', image_file)
+            unless File.exist?(image_path)
+              render json: { error: "Image file not found: #{image_file}" }, status: :bad_request
+              return
+            end
+
+            images << MiniMagick::Image.open(image_path)
+          end
+
+          if images.empty?
+            render json: { error: 'No valid icon parts provided' }, status: :bad_request
+            return
+          end
+
+          base_image = images.shift
+          images.each do |img|
+            base_image = base_image.composite(img) do |c|
+              c.compose "Over"    # OverCompositeOp
+              c.geometry "+0+0"   # 位置調整
+            end
+          end
+
+          output_dir = Rails.root.join('public', 'assets', 'generated_icons')
+          FileUtils.mkdir_p(output_dir) unless Dir.exist?(output_dir)
+          output_filename = "icon_#{SecureRandom.uuid}.png"
+          output_path = output_dir.join(output_filename)
+          base_image.write(output_path)
+
+          generated_images << "assets/generated_icons/#{output_filename}"
+        end
+
+        generated_image_urls = []
+
+        generated_images.each_with_index do |relative_path, index|
+          parts = normalized_parts[index].deep_symbolize_keys
+
+          icon_image_record = IconImage.find_or_create_by!(image: relative_path) do |record|
+            record.point = 0
+          end
+
+          user = resolve_user_for_parts(parts, fallback_user)
+          if user
+            user_icon = UserIcon.find_or_initialize_by(user: user)
+            user_icon.icon_image = icon_image_record
+            user_icon.is_icon = true
+            user_icon.save!
+          end
+
+          generated_image_urls << build_image_url(relative_path)
+        end
+
+        render json: { generated_icons: generated_image_urls }, status: :ok
+      rescue => e
+        render json: { error: e.message }, status: :internal_server_error
+        return
+      end
+
+
+
       private
 
       # icon_partsパラメータを配列のハッシュに正規化
-      def normalize_icon_parts(icon_parts_data)
-        case icon_parts_data
+      def normalize_icon_parts(data)
+        case data
+        when nil
+          []
+        when ActionController::Parameters
+          normalize_icon_parts(data.to_unsafe_h)
         when Array
-          icon_parts_data.map { |parts| safe_to_hash(parts) }.compact
-        when ActionController::Parameters, Hash
-          [safe_to_hash(icon_parts_data)].compact
+          data.flat_map { |entry| normalize_icon_parts(entry) }.reject(&:blank?)
+        when Hash
+          [data].reject(&:blank?)
+        when String
+          begin
+            parsed = JSON.parse(data)
+            normalize_icon_parts(parsed)
+          rescue JSON::ParserError
+            []
+          end
         else
           []
-        end
-      end
-
-      # ActionController::Parameters を含む値をハッシュに変換
-      def safe_to_hash(parts)
-        if parts.respond_to?(:to_unsafe_h)
-          parts.to_unsafe_h
-        elsif parts.is_a?(Hash)
-          parts
-        else
-          nil
         end
       end
 
