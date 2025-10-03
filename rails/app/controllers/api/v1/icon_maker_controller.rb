@@ -67,6 +67,10 @@ module Api
         end
 
         fallback_user = find_user(params[:user_id]) if params[:user_id].present?
+        if params[:user_id].present? && fallback_user.nil?
+          render json: { error: 'User not found' }, status: :bad_request
+          return
+        end
         icon_parts_lists = []
 
         normalized_parts.each do |parts|
@@ -78,17 +82,17 @@ module Api
           end
 
           icon_parts_list = IconPartsList.new(user: user)
-          typed_parts.each do |type, part_id|
-            next if type == :user_id
+          assign_icon_part_images(icon_parts_list, typed_parts)
 
-            icon_part = IconPart.find_by(id: part_id)
-            next unless icon_part
-
-            column_name = "#{type}_image"
-            if icon_parts_list.respond_to?("#{column_name}=")
-              icon_parts_list.send("#{column_name}=", icon_part.image)
-            end
+          missing_columns = required_icon_part_columns.reject do |column|
+            icon_parts_list.public_send(column).present?
           end
+
+          if missing_columns.any?
+            render json: { error: 'Invalid icon parts data', missing_columns: missing_columns }, status: :bad_request
+            return
+          end
+
           icon_parts_lists << icon_parts_list
         end
 
@@ -118,7 +122,7 @@ module Api
       def make_icon
       # 受け取ったパーツ情報を元にアイコン画像を生成して返す
       #   {
-      #   "icon_parts": [
+      #   "icon_parts":
       #     {
       #       "id": 1,
       #       "user_id": 1,
@@ -133,8 +137,7 @@ module Api
       #       "accessory_image": "assets/icon_maker/test.png",
       #       "background": "assets/icon_maker/test.png",
       #       "frame": "assets/icon_maker/test.png"
-      #     }
-      #   ]
+      #   }
       # }
         layer_order = %w[background skin back_hair clothing eyebrows eyes high_light front_hair mouth accessory frame]
         icon_parts_data = params[:icon_parts].presence || params[:icon_parts_list]
@@ -146,30 +149,50 @@ module Api
 
         fallback_user = find_user(params[:user_id]) if params[:user_id].present?
 
-        # 画像合成処理
-        # 1. 各パーツの画像を読み込み
-        # 2. レイヤー順に重ね合わせ
-        # 3. 最終画像を保存してURLを返す
+        requests = []
+        normalized_parts.each do |parts|
+          typed_parts = parts.deep_symbolize_keys
+          layer_images = extract_layer_images(typed_parts)
+
+          if layer_images.empty?
+            render json: { error: 'No valid icon parts provided' }, status: :bad_request
+            return
+          end
+
+          user = resolve_user_for_parts(typed_parts, fallback_user)
+          if typed_parts.key?(:user_id) && user.nil?
+            render json: { error: 'User not found' }, status: :bad_request
+            return
+          end
+
+          requests << {
+            user: user,
+            layer_images: layer_images
+          }
+        end
+
         begin
           require 'mini_magick'
         rescue LoadError
           render json: { error: 'Image processing library not available' }, status: :internal_server_error
           return
         end
-        generated_images = []
-        normalized_parts.each do |parts|
+
+        generated_entries = []
+
+        requests.each do |request|
           images = []
           layer_order.each do |layer|
-            image_file = parts["#{layer}_image"] || parts[layer.to_sym]
+            image_file = request[:layer_images][layer.to_sym]
             next unless image_file.present?
 
-            image_path = Rails.root.join('public', image_file)
-            unless File.exist?(image_path)
+            image_path = absolute_image_path(image_file)
+            unless image_path && File.exist?(image_path)
               render json: { error: "Image file not found: #{image_file}" }, status: :bad_request
               return
             end
 
-            images << MiniMagick::Image.open(image_path)
+            images << MiniMagick::Image.open(image_path.to_s)
           end
 
           if images.empty?
@@ -180,8 +203,8 @@ module Api
           base_image = images.shift
           images.each do |img|
             base_image = base_image.composite(img) do |c|
-              c.compose "Over"    # OverCompositeOp
-              c.geometry "+0+0"   # 位置調整
+              c.compose 'Over'
+              c.geometry '+0+0'
             end
           end
 
@@ -191,26 +214,24 @@ module Api
           output_path = output_dir.join(output_filename)
           base_image.write(output_path)
 
-          generated_images << "assets/generated_icons/#{output_filename}"
+          generated_entries << {
+            path: "assets/generated_icons/#{output_filename}",
+            user: request[:user]
+          }
         end
 
         generated_image_urls = []
 
-        generated_images.each_with_index do |relative_path, index|
-          parts = normalized_parts[index].deep_symbolize_keys
-
-          # 作成したアイコン画像をIconImageとして保存
-          icon_image_record = IconImage.find_or_create_by!(image: relative_path) do |record|
+        generated_entries.each do |entry|
+          icon_image_record = IconImage.find_or_create_by!(image: entry[:path]) do |record|
             record.point = 0
           end
 
-          # icon_image_listに保存
-          user_id = parts[:user_id] || fallback_user&.id
-          if user_id
-            IconImageList.find_or_create_by!(user_id: user_id, image: icon_image_record)
+          if entry[:user]
+            IconImageList.find_or_create_by!(user: entry[:user], image: icon_image_record)
           end
 
-          generated_image_urls << build_image_url(relative_path)
+          generated_image_urls << build_image_url(entry[:path])
         end
 
         render json: { generated_icons: generated_image_urls }, status: :ok
@@ -287,6 +308,148 @@ module Api
         return fallback_user if user_id.nil?
 
         find_user(user_id)
+      end
+
+      def assign_icon_part_images(icon_parts_list, parts)
+        parts.each do |type, value|
+          next if type == :user_id
+
+          column = resolve_icon_part_column(type)
+          next unless column
+
+          image_value = resolve_icon_part_image_value(value)
+          next unless image_value.present?
+
+          icon_parts_list.public_send("#{column}=", image_value)
+        end
+      end
+
+      def resolve_icon_part_column(type)
+        type_str = type.to_s
+
+        if type_str.end_with?('_image')
+          column = type_str.to_sym
+          return column if required_icon_part_columns.include?(column)
+        end
+
+        base_name = type_str
+        base_name = base_name.delete_suffix('_id') if base_name.end_with?('_id')
+        candidate = "#{base_name}_image".to_sym
+        required_icon_part_columns.include?(candidate) ? candidate : nil
+      end
+
+      def resolve_icon_part_image_value(value)
+        return if value.blank?
+
+        # If it's an IconPart id (integer or numeric string)
+        if numeric_id?(value)
+          icon_part = IconPart.find_by(id: value.to_i)
+          return icon_part.image if icon_part
+        end
+
+        # Allow direct image path string or look up by path
+        if value.is_a?(String)
+          icon_part = IconPart.find_by(image: value)
+          return icon_part.image if icon_part
+          return value
+        end
+
+        nil
+      end
+
+      def required_icon_part_columns
+        @required_icon_part_columns ||= %i[
+          eyes_image
+          mouth_image
+          skin_image
+          front_hair_image
+          back_hair_image
+          eyebrows_image
+          high_light_image
+          clothing_image
+          accessory_image
+        ]
+      end
+
+      def extract_layer_images(parts)
+        layer_images = {}
+
+        parts.each do |key, value|
+          next if key == :user_id || value.blank?
+
+          key_str = key.to_s
+
+          if key_str.end_with?('_image')
+            layer_key = key_str.delete_suffix('_image').to_sym
+            layer_images[layer_key] = value
+            next
+          end
+
+          case key_str
+          when 'background'
+            path = resolve_background_image_path(value)
+            layer_images[:background] = path if path.present?
+          when 'frame'
+            path = resolve_frame_image_path(value)
+            layer_images[:frame] = path if path.present?
+          else
+            path = resolve_icon_layer_image(value)
+            layer_images[key.to_sym] = path if path.present?
+          end
+        end
+
+        layer_images
+      end
+
+      def resolve_icon_layer_image(value)
+        return value if value.is_a?(String)
+
+        if numeric_id?(value)
+          icon_part = IconPart.find_by(id: value.to_i)
+          return icon_part.image if icon_part
+        end
+
+        nil
+      end
+
+      def resolve_background_image_path(value)
+        return value if value.is_a?(String)
+
+        if numeric_id?(value)
+          background = BackgroundImage.find_by(id: value.to_i)
+          return background.image if background
+        end
+
+        nil
+      end
+
+      def resolve_frame_image_path(value)
+        return value if value.is_a?(String)
+
+        if numeric_id?(value)
+          frame = FrameImage.find_by(id: value.to_i)
+          return frame.image if frame
+        end
+
+        nil
+      end
+
+      def absolute_image_path(image_file)
+        return nil if image_file.blank?
+
+        if image_file.start_with?('rails/')
+          Rails.root.join(image_file.sub(/^rails\//, ''))
+        elsif image_file.start_with?('public/')
+          Rails.root.join(image_file)
+        elsif image_file.start_with?('/')
+          Rails.root.join('public', image_file.delete_prefix('/'))
+        else
+          Rails.root.join('public', image_file)
+        end
+      end
+
+      def numeric_id?(value)
+        Integer(value, exception: false).present?
       end
     end
   end
