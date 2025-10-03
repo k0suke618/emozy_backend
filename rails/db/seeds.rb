@@ -70,13 +70,17 @@ posts_image_paths = if Dir.exist?(posts_image_dir)
                       []
                     end
 50.times do
-  image_path = (posts_image_paths + [nil]).sample
+ image_path = (posts_image_paths + [nil]).sample
+  reactions_to_enable = (1..12).to_a.sample(rand(1..3))
+  reaction_flags = (1..12).each_with_object({}) do |i, flags|
+    flags["is_set_reaction_#{i}".to_sym] = reactions_to_enable.include?(i)
+  end
   Post.create!(
     user: users.sample,
     topic: topics.sample,
     content: Faker::Lorem.paragraph,
     image: image_path,
-    is_set_reaction_1: true # デフォルトでリアクション1を有効にする
+    **reaction_flags
   )
 end
 puts 'Posts created successfully!'
