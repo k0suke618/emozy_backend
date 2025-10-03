@@ -80,7 +80,7 @@ Rails.application.routes.draw do
       # background image
       get "background_image/update_db", to: "background_image#update_db"
       resources :background_image, only: [:index, :create, :show, :update, :destroy]
-      resources :background_list, only: [:index]
+      resources :background_list, only: [:index, :show]
 
       # icon image list
       resources :icon_image_list, only: [:index, :show]  #http://localhost:3333/api/v1/icon_image_list?user_id=1 # アイコン画像リストの取得
