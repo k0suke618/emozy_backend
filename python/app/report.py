@@ -6,6 +6,7 @@ from typing import Any, Sequence
 
 import pandas as pd
 import requests
+import re
 
 BASE_URL = os.getenv("LLM_BASE_URL", "http://host.docker.internal:1234/v1")
 API_KEY = os.getenv("LLM_API_KEY", "lm-studio")
@@ -175,6 +176,15 @@ def get_random_post_content() -> str:
     length = len(df)
     random_index = random.randint(0, length - 1)
     return df.iloc[random_index]["本件投稿"]
+
+def simple_no_mean_check(text: str) -> bool:
+    # 無意味な投稿（同じ文字の入力）の簡易チェック
+    # 正規表現を使って、同じ文字が2回以上連続する場合を検出
+    if re.search(r'(.)\1{2,}', text):
+        return True
+    if len(text) == 1:
+        return True
+    return False
 
 
 if __name__ == "__main__":

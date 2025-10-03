@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from report import BASE_URL, MODEL, Report, call_llm
+from report import simple_no_mean_check
 
 app = FastAPI()
 
@@ -41,6 +42,13 @@ def chat(body: ChatIn):
 @app.post("/python/judge_report")
 def judge_report(body: ChatIn):
     report = Report(language="JP")
+    # 文章が入力されたかチェック
+    if simple_no_mean_check(body.message):
+        return {
+            "is_report": False,
+            "response": "",
+            "detail": "文章を入力してください",
+        }
     try:
         result = report.judge_report(body.message)
     except requests.Timeout as exc:
