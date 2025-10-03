@@ -75,6 +75,12 @@ Rails.application.routes.draw do
       # frame image
       get "frame_image/update_db", to: "frame_image#update_db" #http://localhost:3333/api/v1/frame_image/update_db # フレーム画像のデータ更新（ファイルの中身をDBに追加）
       resources :frame_image, only: [:index, :create, :show, :update, :destroy]
+      resources :frame_list, only: [:index]
+
+      # background image
+      get "background_image/update_db", to: "background_image#update_db"
+      resources :background_image, only: [:index, :create, :show, :update, :destroy]
+      resources :background_list, only: [:index]
     end
   end
 end
