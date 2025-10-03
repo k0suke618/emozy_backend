@@ -199,16 +199,15 @@ module Api
         generated_images.each_with_index do |relative_path, index|
           parts = normalized_parts[index].deep_symbolize_keys
 
+          # 作成したアイコン画像をIconImageとして保存
           icon_image_record = IconImage.find_or_create_by!(image: relative_path) do |record|
             record.point = 0
           end
 
-          user = resolve_user_for_parts(parts, fallback_user)
-          if user
-            user_icon = UserIcon.find_or_initialize_by(user: user)
-            user_icon.icon_image = icon_image_record
-            user_icon.is_icon = true
-            user_icon.save!
+          # icon_image_listに保存
+          user_id = parts[:user_id] || fallback_user&.id
+          if user_id
+            IconImageList.find_or_create_by!(user_id: user_id, image: icon_image_record)
           end
 
           generated_image_urls << build_image_url(relative_path)
