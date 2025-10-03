@@ -167,6 +167,7 @@ module Api
 
           requests << {
             user: user,
+            user_id: user&.id || typed_parts[:user_id] || fallback_user&.id,
             layer_images: layer_images
           }
         end
@@ -216,7 +217,8 @@ module Api
 
           generated_entries << {
             path: "assets/generated_icons/#{output_filename}",
-            user: request[:user]
+            user: request[:user],
+            user_id: request[:user_id]
           }
         end
 
@@ -227,11 +229,17 @@ module Api
             record.point = 0
           end
 
-          if entry[:user]
-            IconImageList.find_or_create_by!(user: entry[:user], image: icon_image_record)
+          url = build_image_url(entry[:path])
+
+          user = entry[:user] || (entry[:user_id] && User.find_by(id: entry[:user_id]))
+
+          if user
+            IconImageList.find_or_create_by!(user: user, image: icon_image_record)
+            user.update!(icon_image_url: url)
+            user.reload
           end
 
-          generated_image_urls << build_image_url(entry[:path])
+          generated_image_urls << url
         end
 
         render json: { generated_icons: generated_image_urls }, status: :ok
