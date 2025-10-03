@@ -76,12 +76,15 @@ Rails.application.routes.draw do
       get "frame_image/update_db", to: "frame_image#update_db" #http://localhost:3333/api/v1/frame_image/update_db # フレーム画像のデータ更新（ファイルの中身をDBに追加）
       resources :frame_image, only: [:index, :create, :show, :update, :destroy]
       resources :frame_list, only: [:index]
+      post "frame_list/acquire", to: "frame_list#acquire"
+      post "frame_lists/acquire", to: "frame_list#acquire"
 
       # background image
       get "background_image/update_db", to: "background_image#update_db"
       resources :background_image, only: [:index, :create, :show, :update, :destroy]
       resources :background_list, only: [:index, :show]
       post "background_list/acquire", to: "background_list#acquire"
+      post "background_lists/acquire", to: "background_list#acquire"
 
       # icon image list
       resources :icon_image_list, only: [:index, :show]  #http://localhost:3333/api/v1/icon_image_list?user_id=1 # アイコン画像リストの取得
