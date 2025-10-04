@@ -68,6 +68,17 @@ module Api
         render json: { error: e.message }, status: :internal_server_error
       end
 
+      # get /api/v1/frame_image/:id
+      def get_image_url
+        frame_image = FrameImage.find(params[:id])
+        image_url = build_image_url(frame_image.image)
+        render json: { image_url: image_url }, status: :ok
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'FrameImage not found' }, status: :not_found
+      rescue => e
+        render json: { error: e.message }, status: :internal_server_error
+      end
+
       private
 
       def frame_image_params
