@@ -156,22 +156,6 @@ module Api
         params.require(:post).permit(:user_id, :reaction_id, :increment)
       end
       
-      # 全データに対して画像URLとリアクション数を追加するためのヘルパーメソッド
-      def serialize_post(post)
-        {
-          id:         post.id,
-          user_id:    post.user_id,
-          name:       post.name,
-          topic_id:   post.topic_id,
-          content:    post.content,
-          image_url:  build_image_url(post.image),
-          num_reactions: get_num_reactions(post),
-          reacted_reaction_ids: @current_user_id ? post.post_reactions.where(user_id: @current_user_id).pluck(:reaction_id) : [],
-          created_at: post.created_at,
-          updated_at: post.updated_at
-        }
-      end
-
       # base64エンコードされた画像をデコードして保存するメソッド
       def save_base64_image(base64_image)
         return nil if base64_image.nil?

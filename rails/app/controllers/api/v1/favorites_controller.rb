@@ -10,11 +10,10 @@ module Api
 
       # GET /api/v1/favorites/:id（idはユーザーID）
       def show
-        user_id = params[:id]
-        # user_idで絞り込んで、お気に入りの投稿ID一覧を取得
-        favorite_post_ids = Favorite.where(user_id: user_id).pluck(:post_id)
+        @current_user_id = params[:id].presence&.to_i
+        favorite_posts = Post.joins(:favorites).where(favorites: { user_id: @current_user_id })
 
-        render json: { favorite_post_ids: favorite_post_ids }, status: :ok
+        render json: favorite_posts.map { |post| serialize_post(post) }, status: :ok
       end
 
       # POST /api/v1/favorites
