@@ -28,7 +28,7 @@ module Api
         users = search_users(keyword).includes(:posts)
 
         posts = search_posts(keyword)
-        posts = posts.or(search_topics(keyword)).distinct
+        # posts = posts.or(search_topics(keyword)).distinct
         
         if reaction_id.present?
           posts = posts.merge(search_reaction(reaction_id))
