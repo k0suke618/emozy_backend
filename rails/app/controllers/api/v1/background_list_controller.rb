@@ -45,14 +45,14 @@ module Api
           return
         end
 
-        if user.point < background_image.point.to_i
+        if user.point < 50
           render json: { error: 'Insufficient points' }, status: :unprocessable_entity
           return
         end
 
         ActiveRecord::Base.transaction do
           user.background_lists.create!(image: background_image)
-          user.update!(point: user.point - background_image.point.to_i)
+          user.update!(point: user.point - 50)
         end
 
         render json: build_icon_assets_payload(user), status: :ok

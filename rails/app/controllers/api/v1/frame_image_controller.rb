@@ -24,8 +24,8 @@ module Api
 
           existing = FrameImage.find_by(image: db_path)
           if existing
-            if existing.point.nil?
-              existing.update!(point: 100)
+            if existing.point != 50
+              existing.update!(point: 50)
               updated << db_path
             end
             next
@@ -35,10 +35,10 @@ module Api
           legacy_record = FrameImage.find_by(image: legacy_path)
 
           if legacy_record
-            legacy_record.update!(image: db_path)
+            legacy_record.update!(image: db_path, point: 50)
             updated << db_path
           else
-            FrameImage.create!(image: db_path, point: 100)
+            FrameImage.create!(image: db_path, point: 50)
             created << db_path
           end
         end

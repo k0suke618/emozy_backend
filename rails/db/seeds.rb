@@ -27,7 +27,7 @@ if Dir.exist?(background_image_dir)
   Dir.children(background_image_dir).select { |f| f.match?(/\.(png|jpg|jpeg|gif)$/i) }.each do |filename|
     relative_path = File.join('public', 'assets', 'icon_maker', 'background', filename)
     db_path = File.join('rails', relative_path)
-    BackgroundImage.find_or_create_by!(image: db_path, point: 100)
+    BackgroundImage.find_or_create_by!(image: db_path, point: 50)
   end
 else
   puts "Warning: Background image directory not found: #{background_image_dir}"
@@ -40,7 +40,7 @@ if Dir.exist?(frame_image_dir)
   Dir.children(frame_image_dir).select { |f| f.match?(/\.(png|jpg|jpeg|gif)$/i) }.each do |filename|
     relative_path = File.join('public', 'assets', 'icon_maker', 'frame', filename)
     db_path = File.join('rails', relative_path)
-    FrameImage.find_or_create_by!(image: db_path, point: 100)
+    FrameImage.find_or_create_by!(image: db_path, point: 50)
   end
 else
   puts "Warning: Frame image directory not found: #{frame_image_dir}"
@@ -140,22 +140,20 @@ puts 'PostReactions created successfully!'
 # 4. アイテム所有の初期データ
 # ----------------------------------------------------
 
-# 各ユーザーに背景画像とフレーム画像、アイコン画像をランダムに付与
+# 各ユーザーにアイコン画像をランダムに付与（背景・フレームは初期状態で未所持）
 puts 'Assigning items to users...'
 users.each do |user|
-  BackgroundImage.all.sample(rand(2..5)).each do |bg_image|
-    BackgroundList.find_or_create_by!(user: user, image: bg_image)
-  end
-  FrameImage.all.sample(rand(2..5)).each do |frame_image|
-    FrameList.find_or_create_by!(user: user, image: frame_image)
-  end
+  # 背景・フレームの所有情報をリセット
+  BackgroundList.where(user: user).delete_all
+  FrameList.where(user: user).delete_all
+
   IconImage.all.sample(rand(2..5)).each do |icon_image|
     IconImageList.find_or_create_by!(user: user, image: icon_image)
   end
 
-  # 各ユーザーにランダムな背景・フレーム・アイコンを設定
-  user.background = BackgroundImage.all.sample
-  user.frame = FrameImage.all.sample
+  # 背景・フレームは未設定のままにする
+  user.background = nil
+  user.frame = nil
   UserIcon.find_or_create_by!(user: user) do |user_icon|
     user_icon.icon_image = IconImage.all.sample
   end
