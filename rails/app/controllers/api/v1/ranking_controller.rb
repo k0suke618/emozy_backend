@@ -25,10 +25,12 @@ module Api
         limit = extract_limit(params[:limit])
         scope = Post.joins(:user) # ユーザー情報をJOIN
 
+        reaction_id_param = params[:reaction_id]
+
         # reaction_idが指定されていれば、そのリアクションで絞り込み
-        if params[:reaction_id].present?
+        if reaction_id_param.present?
           scope = scope.joins(:post_reactions)
-                       .where(post_reactions: { reaction_id: params[:reaction_id] })
+                       .where(post_reactions: { reaction_id: reaction_id_param })
         else
           # 指定がなければ、全てのリアクションを対象に集計
           scope = scope.left_joins(:post_reactions)
@@ -37,10 +39,18 @@ module Api
         # topic_idでの絞り込み（もしあれば）
         scope = scope.where(topic_id: params[:topic_id]) if params[:topic_id].present?
 
+        score_calculation = if reaction_id_param.present?
+          # reaction_idが指定されている場合、そのIDのリアクション数だけをカウント
+          "SUM(CASE WHEN post_reactions.reaction_id = #{reaction_id_param.to_i} THEN 1 ELSE 0 END)"
+        else
+          # 指定がなければ、全てのリアクション数をカウント
+          "COUNT(post_reactions.id)"
+        end
+
         # リアクション数(score)で集計・並び替え
         rankings = scope
-          .select('posts.*, COUNT(post_reactions.id) AS score')
-          .group('posts.id')
+          .select("posts.*, #{score_calculation} AS score")
+          .group('posts.id', 'users.id')
           .order('score DESC')
           .limit(limit)
 

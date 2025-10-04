@@ -29,7 +29,7 @@ module Api
         end
 
         # 最終的なpostsをシリアライズして返す
-        serialized_posts = posts.distinct.map { |p| serialize_post(p) }
+        serialized_posts = posts.order(created_at: :desc).distinct.map { |p| serialize_post(p) }
         render_json({ users: [], posts: serialized_posts })
       end
     

@@ -11,7 +11,7 @@ module Api
       # GET /api/v1/favorites/:id（idはユーザーID）
       def show
         @current_user_id = params[:id].presence&.to_i
-        favorite_posts = Post.joins(:favorites).where(favorites: { user_id: @current_user_id })
+        favorite_posts = Post.joins(:favorites).where(favorites: { user_id: @current_user_id }).order('favorites.created_at DESC')
 
         render json: favorite_posts.map { |post| serialize_post(post) }, status: :ok
       end
