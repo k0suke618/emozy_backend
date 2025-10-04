@@ -186,6 +186,34 @@ def simple_no_mean_check(text: str) -> bool:
         return True
     return False
 
+def dangerous_content_check(text: str) -> bool:
+    # 危険な内容を含むかの簡易チェック
+    # True: 危険な内容を含む, False: 含まない
+    dangerous_keywords = [
+        "自殺",
+        "殺す",
+        "死ね",
+        "しね",
+        "暴力",
+        "テロ",
+        "麻薬",
+        "薬物",
+        "強盗",
+        "詐欺",
+        "レイプ",
+        "性的暴行",
+        "虐待",
+        "人身売買",
+        "拷問",
+        "奴隷",
+        "差別",
+        "ヘイトスピーチ",
+    ]
+    for keyword in dangerous_keywords:
+        if keyword in text:
+            return True
+    return False
+
 
 if __name__ == "__main__":
     report = Report(language="JP")
