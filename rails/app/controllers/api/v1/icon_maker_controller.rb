@@ -61,16 +61,18 @@ module Api
         
         icon_parts_data = params[:icon_parts].presence || params[:icon_parts_list]
         normalized_parts = normalize_icon_parts(icon_parts_data)
-        if normalized_parts.blank?
-          render json: { error: 'Invalid icon parts data' }, status: :bad_request
-          return
-        end
 
         fallback_user = find_user(params[:user_id]) if params[:user_id].present?
         if params[:user_id].present? && fallback_user.nil?
           render json: { error: 'User not found' }, status: :bad_request
           return
         end
+
+        if normalized_parts.blank?
+          handle_icon_image_selection(fallback_user)
+          return
+        end
+
         icon_parts_lists = []
 
         normalized_parts.each do |parts|
@@ -251,6 +253,75 @@ module Api
 
 
       private
+
+      # アイコン画像だけを保存したいケースを処理
+      def handle_icon_image_selection(fallback_user)
+        icon_image_id = params[:icon_image_id]
+        if icon_image_id.blank?
+          render json: { error: 'Invalid icon parts data' }, status: :bad_request
+          return
+        end
+
+        user = fallback_user || find_user(params[:user_id])
+        unless user
+          render json: { error: 'User not found' }, status: :bad_request
+          return
+        end
+
+        icon_image = IconImage.find_by(id: icon_image_id)
+        unless icon_image
+          render json: { error: 'Icon image not found' }, status: :bad_request
+          return
+        end
+
+        frame_image = resolve_frame_selection_param(params[:frame_image_id] || params[:frame_id] || params[:frame])
+
+        ActiveRecord::Base.transaction do
+          IconImageList.find_or_create_by!(user: user, image: icon_image)
+
+          user_icon = UserIcon.find_or_initialize_by(user: user)
+          user_icon.icon_image = icon_image
+          user_icon.is_icon = true
+          user_icon.save!
+
+          user.assign_attributes(icon_image_url: build_image_url(icon_image.image))
+          user.frame = frame_image if frame_image
+          user.save!
+        end
+
+        render json: {
+          message: 'Icon image saved',
+          icon_image: icon_image.as_json,
+          icon_image_url: build_image_url(icon_image.image),
+          frame_image_id: frame_image&.id
+        }, status: :ok
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      end
+
+      def resolve_frame_selection_param(frame_param)
+        return nil if frame_param.blank?
+
+        value =
+          case frame_param
+          when ActionController::Parameters
+            frame_param.to_unsafe_h
+          else
+            frame_param
+          end
+
+        if value.is_a?(Hash)
+          value = value[:id] || value['id'] || value[:frame_image_id] || value['frame_image_id'] || value[:frame_id] || value['frame_id'] || value[:image] || value['image']
+        end
+
+        if numeric_id?(value)
+          FrameImage.find_by(id: value.to_i)
+        elsif value.is_a?(String)
+          FrameImage.find_by(image: value)
+        else
+          nil
+        end
+      end
 
       # icon_partsパラメータを配列のハッシュに正規化
       def normalize_icon_parts(data)

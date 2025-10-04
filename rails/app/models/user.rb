@@ -13,6 +13,7 @@ class User < ApplicationRecord
   has_many :topics, through: :posts
 
   has_one :user_icon, dependent: :destroy
+  has_many :icon_image_lists, dependent: :destroy
   has_many :icon_images, through: :icon_image_lists, source: :image
 
   has_many :favorites, dependent: :destroy

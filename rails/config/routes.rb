@@ -86,8 +86,12 @@ Rails.application.routes.draw do
       post "background_list/acquire", to: "background_list#acquire"
       post "background_lists/acquire", to: "background_list#acquire"
 
-      # icon image list
-      resources :icon_image_list, only: [:index, :show]  #http://localhost:3333/api/v1/icon_image_list?user_id=1 # アイコン画像リストの取得
+      # icon image
+      get "icon_image/update_db", to: "icon_image#update_db" # http://localhost:3333/api/v1/icon_image/update_db # アイコン画像のデータ更新（ファイルの中身をDBに追加）
+      resources :icon_image, only: [:index, :create, :show, :update, :destroy]
+      resources :icon_image_list, only: [:index, :show]
+      post "icon_image_list/acquire", to: "icon_image_list#acquire"
+      post "icon_image_lists/acquire", to: "icon_image_list#acquire"
     end
   end
 end
