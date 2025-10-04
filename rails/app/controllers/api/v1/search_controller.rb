@@ -2,6 +2,7 @@ module Api
   module V1
     # ApplicationControllerを継承するように変更
     class SearchController < ApplicationController
+      include ImageUrlHelper
       protect_from_forgery with: :null_session
       
       def index
@@ -30,6 +31,7 @@ module Api
 
         # 最終的なpostsをシリアライズして返す
         serialized_posts = posts.distinct.map { |p| serialize_post(p) }
+        posts = posts.includes(:user)
         render_json({ users: [], posts: serialized_posts })
       end
     
@@ -56,12 +58,55 @@ module Api
       end
 
       def render_json(data, status: :ok)
-        render json: data, status: status
+        render json: {
+          users: Array(data[:users]).map { |user| serialize_user(user) },
+          posts: Array(data[:posts]).map { |post| serialize_post(post) }
+        }, status: status
       end
 
       def search_params
         # user_idを許可する
         params.require(:search).permit(:keyword, :reaction_id, :user_id)
+      end
+
+      def serialize_user(user)
+        user.as_json.merge('icon_image_url' => resolve_user_icon_url(user))
+      end
+
+      def serialize_post(post)
+        post.as_json.merge(
+          'image_url' => build_image_url(post.image),
+          'icon_image_url' => resolve_user_icon_url(post.user)
+        )
+      end
+
+      def resolve_user_icon_url(user)
+        return nil unless user
+
+        url = user.icon_image_url
+        return nil if url.blank?
+
+        url.start_with?('http://', 'https://') ? url : build_image_url(url)
+      end
+
+      def serialize_user(user)
+        user.as_json.merge('icon_image_url' => resolve_user_icon_url(user))
+      end
+
+      def serialize_post(post)
+        post.as_json.merge(
+          'image_url' => build_image_url(post.image),
+          'icon_image_url' => resolve_user_icon_url(post.user)
+        )
+      end
+
+      def resolve_user_icon_url(user)
+        return nil unless user
+
+        url = user.icon_image_url
+        return nil if url.blank?
+
+        url.start_with?('http://', 'https://') ? url : build_image_url(url)
       end
     end
   end
