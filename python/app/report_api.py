@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from report import BASE_URL, MODEL, Report, call_llm
-from report import simple_no_mean_check
+from report import simple_no_mean_check, dangerous_content_check
 
 app = FastAPI()
 
@@ -48,6 +48,12 @@ def judge_report(body: ChatIn):
             "is_report": False,
             "response": "",
             "detail": "文章を入力してください",
+        }
+    if dangerous_content_check(body.message):
+        return {
+            "is_report": True,
+            "response": "",
+            "detail": "不適切な内容が含まれています",
         }
     try:
         result = report.judge_report(body.message)
