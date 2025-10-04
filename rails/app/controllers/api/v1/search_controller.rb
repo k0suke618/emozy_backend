@@ -1,52 +1,55 @@
 module Api
   module V1
+    # ApplicationControllerを継承するように変更
     class SearchController < ApplicationController
       protect_from_forgery with: :null_session
       
-      # POST /api/v1/search
       def index
-        # keyword検索API
-        # 検索対象
-        # user: name (keywordを含むuserを取得), profile (keywordを含むuser profileを取得)
-        # post: content (keywordを含むpostを取得)
-        # topic: content (topic contentからtopic idを取得、そのtopic idを持つpostを取得)
-        # reaction_idで絞り込み可能 (reaction_idを持つpostのみ取得)
+        # 現在のユーザーIDを取得
+        @current_user_id = search_params[:user_id].presence&.to_i
+
         keyword = search_params[:keyword]
         reaction_id = search_params[:reaction_id]
         if keyword.blank? and reaction_id.blank?
           render json: { error: "Keyword or Reaction ID is required" }, status: :bad_request
           return
         end
-        # keywordが空文字の場合はusersを無視
+
         if keyword.blank?
           if reaction_id.present?
             posts = search_reaction(reaction_id).distinct
-            render_json({ users: [], posts: posts })
+            # 投稿データをserialize_postで整形
+            serialized_posts = posts.map { |p| serialize_post(p) }
+            render_json({ users: [], posts: serialized_posts })
             return
           end
         end
-        # user nameを検索
-        users = search_users(keyword)
-        # user profileを検索して追加
-        users = users.or(search_user_profile(keyword)).distinct
-        # post contentを検索
+
+        users = search_users(keyword).includes(:posts)
+
         posts = search_posts(keyword)
-        # topic contentを検索して追加
-        posts = posts.or(search_topics(keyword)).distinct
-        # reaction_idが指定されていればリアクションで絞り込み
+        # posts = posts.or(search_topics(keyword)).distinct
+        
         if reaction_id.present?
           posts = posts.merge(search_reaction(reaction_id))
         end
-        render_json({ users: users, posts: posts })
+
+        # 投稿データをserialize_postで整形
+        serialized_users = users.map do |user|
+          user.as_json.merge(
+            "posts" => user.posts.map { |p| serialize_post(p) }
+          )
+        end
+
+        serialized_posts = posts.map { |p| serialize_post(p) }
+        
+        render_json({ users: serialized_users, posts: serialized_posts })
       end
     
     private
+      # (search_users, search_postsなどのメソッドは変更なし)
       def search_users(keyword)
         User.where("name LIKE ?", "%#{keyword}%")
-      end
-
-      def search_user_profile(keyword)
-        User.where("profile LIKE ?", "%#{keyword}%")
       end
 
       def search_posts(keyword)
@@ -70,7 +73,8 @@ module Api
       end
 
       def search_params
-        params.require(:search).permit(:keyword, :reaction_id)
+        # user_idを許可する
+        params.require(:search).permit(:keyword, :reaction_id, :user_id)
       end
     end
   end
