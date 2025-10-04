@@ -26,7 +26,6 @@ module Api
         end
 
         users = search_users(keyword).includes(:posts)
-        users = users.or(search_user_profile(keyword).includes(:posts)).distinct
 
         posts = search_posts(keyword)
         posts = posts.or(search_topics(keyword)).distinct
@@ -44,9 +43,6 @@ module Api
 
         serialized_posts = posts.map { |p| serialize_post(p) }
         
-        # usersに関連する投稿もシリアライズする必要がある場合、別途処理が必要ですが、
-        # まずは投稿検索の結果から修正します。
-        # usersのレスポンスは一旦そのままにします。
         render_json({ users: serialized_users, posts: serialized_posts })
       end
     
@@ -54,10 +50,6 @@ module Api
       # (search_users, search_postsなどのメソッドは変更なし)
       def search_users(keyword)
         User.where("name LIKE ?", "%#{keyword}%")
-      end
-
-      def search_user_profile(keyword)
-        User.where("profile LIKE ?", "%#{keyword}%")
       end
 
       def search_posts(keyword)
