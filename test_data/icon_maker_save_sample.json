@@ -1,0 +1,14 @@
+{
+  "user_id": 1,
+  "icon_parts": {
+      "skin": 10,
+      "accessory": 2,
+      "back_hair": 3,
+      "clothing": 4,
+      "eyebrows": 5,
+      "eyes": 6,
+      "front_hair": 7,
+      "high_light": 8,
+      "mouth": 9
+    }
+}

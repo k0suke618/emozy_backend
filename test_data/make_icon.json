@@ -1,0 +1,16 @@
+{
+  "icon_parts_list": {
+    "user_id": 1,
+    "eyes_image": "assets/icon_maker/eyes/post_test_img.png",
+    "mouth_image": "assets/icon_maker/mouth/test.png",
+    "skin_image": "assets/icon_maker/skin/skin_1.png",
+    "front_hair_image": "assets/icon_maker/front_hair/test.png",
+    "back_hair_image": "assets/icon_maker/back_hair/test.png",
+    "eyebrows_image": "assets/icon_maker/eyebrows/test.png",
+    "high_light_image": "assets/icon_maker/high_light/test.png",
+    "clothing_image": "assets/icon_maker/clothing/test.png",
+    "accessory_image": "assets/icon_maker/accessory/test.png",
+    "background_image": "assets/icon_maker/background/test.png",
+    "frame_image": "assets/icon_maker/frame/test.png"
+  }
+}
