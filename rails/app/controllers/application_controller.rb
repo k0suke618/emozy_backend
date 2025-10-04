@@ -34,7 +34,4 @@ class ApplicationController < ActionController::Base
     end
     counts
   end
-
-  # (posts_controllerにある他のヘルパーメソッドも必要に応じて移動)
-  # save_base64_image, detect_image_extension など
 end

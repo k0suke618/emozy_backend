@@ -15,35 +15,22 @@ module Api
           return
         end
 
-        if keyword.blank?
-          if reaction_id.present?
-            posts = search_reaction(reaction_id).distinct
-            # 投稿データをserialize_postで整形
-            serialized_posts = posts.map { |p| serialize_post(p) }
-            render_json({ users: [], posts: serialized_posts })
-            return
-          end
+        posts = Post.all
+
+        # キーワードがあればユーザー名 or 投稿内容で絞り込み
+        if keyword.present?
+          user_ids = User.where("name LIKE ?", "%#{keyword}%").pluck(:id)
+          posts = posts.where("content LIKE ? OR user_id IN (?)", "%#{keyword}%", user_ids)
         end
 
-        users = search_users(keyword).includes(:posts)
-
-        posts = search_posts(keyword)
-        # posts = posts.or(search_topics(keyword)).distinct
-        
+        # リアクションIDがあれば、さらにAND条件で絞り込み
         if reaction_id.present?
           posts = posts.merge(search_reaction(reaction_id))
         end
 
-        # 投稿データをserialize_postで整形
-        serialized_users = users.map do |user|
-          user.as_json.merge(
-            "posts" => user.posts.map { |p| serialize_post(p) }
-          )
-        end
-
-        serialized_posts = posts.map { |p| serialize_post(p) }
-        
-        render_json({ users: serialized_users, posts: serialized_posts })
+        # 最終的なpostsをシリアライズして返す
+        serialized_posts = posts.distinct.map { |p| serialize_post(p) }
+        render_json({ users: [], posts: serialized_posts })
       end
     
     private
