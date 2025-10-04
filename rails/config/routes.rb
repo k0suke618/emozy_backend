@@ -80,6 +80,7 @@ Rails.application.routes.draw do
       resources :frame_list, only: [:index]
       post "frame_list/acquire", to: "frame_list#acquire"
       post "frame_lists/acquire", to: "frame_list#acquire"
+      get "frame_image/:id/image_url", to: "frame_image#get_image_url" # http://localhost:3333/api/v1/frame_image/:id/image_url
 
       # background image
       get "background_image/update_db", to: "background_image#update_db"
@@ -94,6 +95,9 @@ Rails.application.routes.draw do
       resources :icon_image_list, only: [:index, :show]
       post "icon_image_list/acquire", to: "icon_image_list#acquire"
       post "icon_image_lists/acquire", to: "icon_image_list#acquire"
+
+      # user posts
+      get "posts/user/:user_id", to: "posts#user_posts" # http://localhost:3333/api/v1/posts/user/:user_id
     end
   end
 end

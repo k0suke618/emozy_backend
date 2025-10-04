@@ -142,6 +142,16 @@ module Api
         head :no_content
       end
 
+      # 同じユーザーの投稿をまとめて取得
+      # GET /api/v1/posts/user/:user_id
+      def user_posts
+        user = User.find(params[:user_id])
+        posts = user.posts.order(created_at: :desc)
+        render json: posts.map { |p| serialize_post(p) }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "User not found" }, status: :not_found
+      end
+
       private
 
       def post_params
