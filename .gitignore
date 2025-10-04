@@ -28,7 +28,7 @@ rails/storage/*
 !/rails/tmp/storage/*
 !/rails/tmp/storage/.keep
 
-# rails/public/assets
+rails/public/assets
 
 # Ignore master key for decrypting credentials and more.
 rails/config/master.key
