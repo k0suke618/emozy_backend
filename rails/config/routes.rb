@@ -39,6 +39,8 @@ Rails.application.routes.draw do
 
       # users
       resources :users, only: [:show, :update] #http://localhost:3333/api/v1/users/:id
+      # set_frame_id
+      post "make/:id", to: "users#set_frame_id" #http://localhost:3333/api/v1/make/:id
 
       # search
       post "search", to: "search#index" #http://localhost:3333/api/v1/search
@@ -56,6 +58,42 @@ Rails.application.routes.draw do
       resources :favorites, only: [:index, :show, :create]  #http://localhost:3333/api/v1/favorites
       post "favorites/delete", to: "favorites#delete" #http://localhost:3333/api/v1/favorites/delete
 
+      # icon maker
+      get "icon_maker/data_update", to: "icon_maker#data_update" #http://localhost:3333/api/v1/icon_maker/data_update # アイコンメーカーのデータ更新（ファイルの中身をDBに追加）
+      get "icon_maker", to: "icon_maker#index" #http://localhost:3333/api/v1/icon_maker # アイコンメーカーのパーツの一覧取得
+      post "icon_maker/save", to: "icon_maker#save" #http://localhost:3333/api/v1/icon_maker/save # アイコンメーカーのパーツを保存
+      get "icon_maker/load", to: "icon_maker#load" #http://localhost:3333/api/v1/icon_maker/load?user_id=1 # アイコンメーカーのパーツを取得
+      post "icon_maker/make_icon", to: "icon_maker#make_icon" #http://localhost:3333/api/v1/icon_maker/make_icon # アイコンメーカーのパーツからアイコンを生成
+
+      # icon parts type
+      resources :icon_parts_type, only: [:index]  #http://localhost:3333/api/v1/icon_parts_type # アイコンパーツの取得
+      
+      # icon parts
+      resources :icon_parts, only: [:index]  #http://localhost:3333/api/v1/icon_parts # アイコンパーツの取得
+
+      # icon parts list
+      resources :icon_parts_list, only: [:index, :show]  #http://localhost:3333/api/v1/icon_parts_list?user_id=1 # アイコンパーツリストの取得
+
+      # frame image
+      get "frame_image/update_db", to: "frame_image#update_db" #http://localhost:3333/api/v1/frame_image/update_db # フレーム画像のデータ更新（ファイルの中身をDBに追加）
+      resources :frame_image, only: [:index, :create, :show, :update, :destroy]
+      resources :frame_list, only: [:index]
+      post "frame_list/acquire", to: "frame_list#acquire"
+      post "frame_lists/acquire", to: "frame_list#acquire"
+
+      # background image
+      get "background_image/update_db", to: "background_image#update_db"
+      resources :background_image, only: [:index, :create, :show, :update, :destroy]
+      resources :background_list, only: [:index, :show]
+      post "background_list/acquire", to: "background_list#acquire"
+      post "background_lists/acquire", to: "background_list#acquire"
+
+      # icon image
+      get "icon_image/update_db", to: "icon_image#update_db" # http://localhost:3333/api/v1/icon_image/update_db # アイコン画像のデータ更新（ファイルの中身をDBに追加）
+      resources :icon_image, only: [:index, :create, :show, :update, :destroy]
+      resources :icon_image_list, only: [:index, :show]
+      post "icon_image_list/acquire", to: "icon_image_list#acquire"
+      post "icon_image_lists/acquire", to: "icon_image_list#acquire"
     end
   end
 end

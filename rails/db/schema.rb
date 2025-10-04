@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_02_052642) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_04_022000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -78,6 +78,36 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_02_052642) do
   create_table "icon_images", force: :cascade do |t|
     t.string "image", null: false
     t.bigint "point", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "icon_parts", force: :cascade do |t|
+    t.bigint "icon_parts_type_id", null: false
+    t.string "image", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["icon_parts_type_id"], name: "index_icon_parts_on_icon_parts_type_id"
+  end
+
+  create_table "icon_parts_lists", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "eyes_image", null: false
+    t.string "mouth_image", null: false
+    t.string "skin_image", null: false
+    t.string "front_hair_image", null: false
+    t.string "back_hair_image", null: false
+    t.string "eyebrows_image", null: false
+    t.string "high_light_image", null: false
+    t.string "clothing_image", null: false
+    t.string "accessory_image", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_icon_parts_lists_on_user_id"
+  end
+
+  create_table "icon_parts_types", force: :cascade do |t|
+    t.text "content", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -194,6 +224,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_02_052642) do
     t.string "password_digest", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "icon_image_url", default: "", null: false
     t.index ["background_id"], name: "index_users_on_background_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["frame_id"], name: "index_users_on_frame_id"
@@ -210,6 +241,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_02_052642) do
   add_foreign_key "frame_lists", "users"
   add_foreign_key "icon_image_lists", "icon_images", column: "image_id"
   add_foreign_key "icon_image_lists", "users"
+  add_foreign_key "icon_parts", "icon_parts_types"
+  add_foreign_key "icon_parts_lists", "users"
   add_foreign_key "points", "point_types"
   add_foreign_key "post_reactions", "posts"
   add_foreign_key "post_reactions", "reactions"

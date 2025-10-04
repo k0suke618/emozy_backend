@@ -13,7 +13,7 @@ RUN apt-get update -qq && \
     # Packages for building gems
     build-essential git pkg-config libpq-dev libyaml-dev \
     # Packages for running the app
-    curl libjemalloc2 libvips postgresql-client && \
+    curl libjemalloc2 libvips postgresql-client imagemagick && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Configure Bundler

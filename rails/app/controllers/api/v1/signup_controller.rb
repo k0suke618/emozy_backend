@@ -9,6 +9,7 @@ module Api
         # nameとemailとpasswordを受け取り、新規ユーザーを作成する
         permitted = signup_params
         user = User.new(permitted)
+        user.point = 200
         if user.save
           # サインアップ成功
           # 作成したユーザー情報を返す

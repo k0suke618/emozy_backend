@@ -36,6 +36,9 @@ gem "bootsnap", require: false
 # 
 gem 'faker'
 
+# 画像合成に MiniMagick を使用
+gem 'mini_magick'
+
 # CORS用
 gem 'rack-cors', require: 'rack/cors'
 
