@@ -6,8 +6,7 @@ module Api
 
       # GET /api/v1/posts
       def index
-        @current_user_id = params[:user_id].presence&.to_i
-        posts = Post.order(created_at: :desc)
+        posts = Post.includes(:user).order(created_at: :desc)
         render json: posts.map { |p| serialize_post(p) }
       end
 
@@ -166,6 +165,31 @@ module Api
         params.require(:post).permit(:user_id, :reaction_id, :increment)
       end
       
+      # 全データに対して画像URLとリアクション数を追加するためのヘルパーメソッド
+      def serialize_post(post)
+        {
+          id:         post.id,
+          user_id:    post.user_id,
+          name:       post.name,
+          topic_id:   post.topic_id,
+          content:    post.content,
+          image_url:  build_image_url(post.image),
+          num_reactions: get_num_reactions(post),
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          icon_image_url: resolve_user_icon_url(post.user)
+        }
+      end
+
+      def resolve_user_icon_url(user)
+        return nil unless user
+
+        url = user.icon_image_url
+        return nil if url.blank?
+
+        url.start_with?('http://', 'https://') ? url : build_image_url(url)
+      end
+
       # base64エンコードされた画像をデコードして保存するメソッド
       def save_base64_image(base64_image)
         return nil if base64_image.nil?
