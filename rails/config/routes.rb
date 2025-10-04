@@ -39,6 +39,8 @@ Rails.application.routes.draw do
 
       # users
       resources :users, only: [:show, :update] #http://localhost:3333/api/v1/users/:id
+      # set_frame_id
+      post "make/:id", to: "users#set_frame_id" #http://localhost:3333/api/v1/make/:id
 
       # search
       post "search", to: "search#index" #http://localhost:3333/api/v1/search
