@@ -13,8 +13,8 @@
 
 ```text
 emozy_backend/
-├── rails/           # Railsアプリ
-├── python/          # Pythonアプリ
+├── rails/           # Rails APIサーバー（認証・DBアクセス・業務ロジック）
+├── python/          # 文章生成サービス（LLM連携・テキスト生成処理）
 ├── docker-compose.yml
 └── README.md
 ```
@@ -30,7 +30,7 @@ docker compose up -d
 停止:
 
 ```bash
-docker compose down --remove-orphans
+docker compose down
 ```
 
 ## フロントと一緒に動かす手順
